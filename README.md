@@ -1,4 +1,5 @@
-# RoZod – Runtime Schema Validator & Coercion
+# 🛡️ RoZod – Runtime Schema Validator & Coercion
+[![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange)](https://github.com/tu-usuario/rozod/releases)
 
 RoZod is a **runtime schema validator** designed for Roblox Luau. It allows you to validate and coerce data safely, including tables, arrays, enums, and primitive values.
 
