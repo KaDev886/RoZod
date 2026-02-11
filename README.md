@@ -37,7 +37,7 @@ local RoZod = require(path.to.RoZod)
 Add RoZod to your `wally.toml`:
 
 ```toml
-RoZod = "kadev886/rozod@0.1.0"
+RoZod = "kadev886/rozod@v0.1.0-alpha"
 ```
 
 Run:
@@ -49,7 +49,7 @@ wally install
 Then require it in your code:
 
 ```lua
-local RoZod = require(path.to.RoZod)
+local RoZod = require(Packages.RoZod)
 ```
 
 ---
