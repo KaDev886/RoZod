@@ -27,7 +27,6 @@ This is especially useful for inventories, player stats, settings, or any data s
 **Option 1: Manual (`.rbxm`)**
 1. Download the latest `RoZod.rbxm` from the [Releases](https://github.com/KaDev886/RoZod/releases) page.
 2. Insert the RoZod ModuleScript anywhere in your project (e.g., ReplicatedStorage or ServerScriptService) and require it from your scripts.
-3. Require it in your scripts:
 
 ```lua
 local RoZod = require(path.to.RoZod)
