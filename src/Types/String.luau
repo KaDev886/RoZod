@@ -55,7 +55,7 @@ function String:Coerce(value : any) : string
 	end
 	
 	if self.minLength and #result < self.minLength then
-		result = string.sub(result, 1, self.minLength)
+		result = result .. string.rep(" ", self.minLength-#result)
 	end
 	
 	if self.maxLength and #result > self.maxLength then
