@@ -33,6 +33,8 @@ If you are using [Wally](https://wally.rs/), add RoZod to your `wally.toml` depe
 
 ```toml
 RoZod = "kadev886/rozod@0.1.0"
+```
+
 ---
 
 ## Basic Usage
