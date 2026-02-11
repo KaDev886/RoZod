@@ -26,13 +26,31 @@ This is especially useful for inventories, player stats, settings, or any data s
 
 **Option 1: Manual (`.rbxm`)**
 1. Download the latest `RoZod.rbxm` from the [Releases](https://github.com/KaDev886/RoZod/releases) page.
-2. Drag and drop the file in your Roblox Studio session.
+2. Insert the RoZod ModuleScript anywhere in your project (e.g., ReplicatedStorage or ServerScriptService) and require it from your scripts.
+3. Require it in your scripts:
 
-**Option 2: Rojo / Wally**
-If you are using [Wally](https://wally.rs/), add RoZod to your `wally.toml` dependencies:
+```lua
+local RoZod = require(path.to.RoZod)
+```
+
+**Option 2: Wally**
+
+Add RoZod to your `wally.toml`:
 
 ```toml
 RoZod = "kadev886/rozod@0.1.0"
+```
+
+Run:
+
+```bash
+wally install
+```
+
+Then require it in your code:
+
+```lua
+local RoZod = require(path.to.RoZod)
 ```
 
 ---
