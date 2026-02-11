@@ -1,0 +1,8 @@
+[package]
+name = "KaDev886/rozod"
+version = "0.1.0-alpha"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[configuration]
+entry_point = "src/init.luau"

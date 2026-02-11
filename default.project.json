@@ -1,0 +1,12 @@
+{
+  "name": "RoZod",
+  "tree": {
+    "$className": "DataModel",
+    
+    "ReplicatedStorage": {
+      "RoZod" : {
+        "$path": "src"
+      }
+    }
+  }
+}
