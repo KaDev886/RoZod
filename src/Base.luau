@@ -1,6 +1,7 @@
 --!strict
 
 local DebugContext = require(script.Parent.DebugContext)
+local TypeOf = require(script.Parent.TypeOf)
 
 export type SchemaBase = {
 	type: string,
@@ -71,8 +72,8 @@ end
 function Base:Expected(expecteds : { any }) : any
 	local newDc = self:_getValidDc()
 	
-	if typeof(expecteds) ~= "table" then
-		newDc:Add(self.policy, self.type, `Expecteds must be a table, got '{typeof(expecteds)}'`)
+	if TypeOf(expecteds) ~= "table" then
+		newDc:Add(self.policy, self.type, `Expecteds must be a table, got '{TypeOf(expecteds)}'`)
 		newDc:Throw()
 		
 		return self

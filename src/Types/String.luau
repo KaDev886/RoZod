@@ -1,6 +1,7 @@
 --!strict
 
 local DebugContext = require(script.Parent.Parent.DebugContext)
+local TypeOf = require(script.Parent.Parent.TypeOf)
 local Base = require(script.Parent.Parent.Base)
 
 export type StringSchema = {
@@ -50,7 +51,7 @@ function String:Coerce(value : any) : string
 	
 	local result = self.default or value
 	
-	if typeof(result) ~= "string" then
+	if TypeOf(result) ~= "string" then
 		result = ""
 	end
 	
@@ -68,8 +69,8 @@ end
 function String:Validate(value : any, dc : DebugContext.DebugContext?)
 	local newDc = self:_getValidDc(dc)
 	
-	if typeof(value) ~= "string" then
-		newDc:Add(self.policy, self.type, `Expected string, got '{typeof(value)}'`)
+	if TypeOf(value) ~= "string" then
+		newDc:Add(self.policy, self.type, `Expected string, got '{TypeOf(value)}'`)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -108,7 +109,7 @@ function String:Validate(value : any, dc : DebugContext.DebugContext?)
 end
 
 function String:IsValid(value : any) : boolean
-	if typeof(value) ~= "string" then
+	if TypeOf(value) ~= "string" then
 		return false
 	end
 	

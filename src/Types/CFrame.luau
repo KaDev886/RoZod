@@ -1,6 +1,7 @@
 --!strict
 
 local DebugContext = require(script.Parent.Parent.DebugContext)
+local TypeOf = require(script.Parent.Parent.TypeOf)
 local Base = require(script.Parent.Parent.Base)
 
 export type CFrameSchema = {
@@ -34,7 +35,7 @@ function CFrameM:Coerce(value : any) : CFrame
 	
 	local result = self.default or value
 	
-	if typeof(result) ~= "CFrame" then
+	if TypeOf(result) ~= "CFrame" then
 		result = CFrame.identity
 	end
 	
@@ -44,8 +45,8 @@ end
 function CFrameM:Validate(value : any, dc : DebugContext.DebugContext?)
 	local newDc = self:_getValidDc(dc)
 	
-	if typeof(value) ~= "CFrame" then
-		newDc:Add(self.policy, self.type, `Expected CFrame, got '{typeof(value)}'`)
+	if TypeOf(value) ~= "CFrame" then
+		newDc:Add(self.policy, self.type, `Expected CFrame, got '{TypeOf(value)}'`)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -64,7 +65,7 @@ function CFrameM:Validate(value : any, dc : DebugContext.DebugContext?)
 end
 
 function CFrameM:IsValid(value : any) : boolean
-	if typeof(value) ~= "CFrame" then
+	if TypeOf(value) ~= "CFrame" then
 		return false
 	end
 	

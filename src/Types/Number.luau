@@ -1,6 +1,7 @@
 --!strict
 
 local DebugContext = require(script.Parent.Parent.DebugContext)
+local TypeOf = require(script.Parent.Parent.TypeOf)
 local Base = require(script.Parent.Parent.Base)
 
 export type NumberSchema = {
@@ -50,7 +51,7 @@ function Number:Coerce(value : any) : number
 	
 	local result = self.default or value
 	
-	if typeof(result) ~= "number" then
+	if TypeOf(result) ~= "number" then
 		result = 0
 	end
 	
@@ -68,8 +69,8 @@ end
 function Number:Validate(value : any, dc : DebugContext.DebugContext?)
 	local newDc = self:_getValidDc(dc)
 	
-	if typeof(value) ~= "number" then
-		newDc:Add(self.policy, self.type, `Expected number, got '{typeof(value)}'`)
+	if TypeOf(value) ~= "number" then
+		newDc:Add(self.policy, self.type, `Expected number, got '{TypeOf(value)}'`)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -108,7 +109,7 @@ function Number:Validate(value : any, dc : DebugContext.DebugContext?)
 end
 
 function Number:IsValid(value : any) : boolean
-	if typeof(value) ~= "number" then
+	if TypeOf(value) ~= "number" then
 		return false
 	end
 	

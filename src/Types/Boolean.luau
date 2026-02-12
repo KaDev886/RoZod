@@ -1,6 +1,7 @@
 --!strict
 
 local DebugContext = require(script.Parent.Parent.DebugContext)
+local TypeOf = require(script.Parent.Parent.TypeOf)
 local Base = require(script.Parent.Parent.Base)
 
 export type BooleanSchema = {
@@ -34,7 +35,7 @@ function Boolean:Coerce(value : any) : boolean
 	
 	local result = self.default or value
 	
-	if typeof(result) ~= "boolean" then
+	if TypeOf(result) ~= "boolean" then
 		result = false
 	end
 	
@@ -44,8 +45,8 @@ end
 function Boolean:Validate(value : any, dc : DebugContext.DebugContext? )
 	local newDc = self:_getValidDc(dc)
 	
-	if typeof(value) ~= "boolean" then
-		newDc:Add(self.policy, self.type, `Expected boolean, got '{typeof(value)}'`)
+	if TypeOf(value) ~= "boolean" then
+		newDc:Add(self.policy, self.type, `Expected boolean, got '{TypeOf(value)}'`)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -64,7 +65,7 @@ function Boolean:Validate(value : any, dc : DebugContext.DebugContext? )
 end
 
 function Boolean:IsValid(value : any) : boolean
-	if typeof(value) ~= "boolean" then
+	if TypeOf(value) ~= "boolean" then
 		return false
 	end
 	

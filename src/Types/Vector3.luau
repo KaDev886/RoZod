@@ -1,6 +1,7 @@
 --!strict
 
 local DebugContext = require(script.Parent.Parent.DebugContext)
+local TypeOf = require(script.Parent.Parent.TypeOf)
 local Base = require(script.Parent.Parent.Base)
 
 export type Vector3Schema = {
@@ -34,7 +35,7 @@ function Vector3M:Coerce(value : any) : Vector3
 	
 	local result = self.default or value
 	
-	if typeof(result) ~= "Vector3" then
+	if TypeOf(result) ~= "Vector3" then
 		result = Vector3.zero
 	end
 	
@@ -44,8 +45,8 @@ end
 function Vector3M:Validate(value : any, dc : DebugContext.DebugContext?)
 	local newDc = self:_getValidDc(dc)
 	
-	if typeof(value) ~= "Vector3" then
-		newDc:Add(self.policy, self.type, `Expected Vector3, got '{typeof(value)}'`)
+	if TypeOf(value) ~= "Vector3" then
+		newDc:Add(self.policy, self.type, `Expected Vector3, got '{TypeOf(value)}'`)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -64,7 +65,7 @@ function Vector3M:Validate(value : any, dc : DebugContext.DebugContext?)
 end
 
 function Vector3M:IsValid(value : any) : boolean
-	if typeof(value) ~= "Vector3" then
+	if TypeOf(value) ~= "Vector3" then
 		return false
 	end
 	

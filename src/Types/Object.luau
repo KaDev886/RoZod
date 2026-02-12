@@ -1,8 +1,9 @@
 --!strict
 
 local DebugContext = require(script.Parent.Parent.DebugContext)
-local Base = require(script.Parent.Parent.Base)
+local TypeOf = require(script.Parent.Parent.TypeOf)
 local Utils = require(script.Parent.Parent.Utils)
+local Base = require(script.Parent.Parent.Base)
 
 export type ObjectSchema = {
 	type: string,
@@ -45,7 +46,7 @@ function Object:Coerce(value : any) : ({} | {[any] : any})
 	
 	local result = self.default or value
 	
-	if typeof(result) ~= "table" then
+	if TypeOf(result) ~= "table" then
 		result = {}
 	else
 		result = Utils.copyTable(value)
@@ -82,9 +83,9 @@ end
 
 function Object:Validate(value : ({} | {[any] : any}), dc : DebugContext.DebugContext?)
 	local newDc = self:_getValidDc(dc)
-	
-	if typeof(value) ~= "table" then
-		newDc:Add(self.policy, self.type, `Expected a table, got '{typeof(value)}'`)
+
+	if TypeOf(value) ~= "table" then
+		newDc:Add(self.policy, self.type, `Expected a table, got '{TypeOf(value)}'`)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -149,7 +150,7 @@ function Object:Validate(value : ({} | {[any] : any}), dc : DebugContext.DebugCo
 end
 
 function Object:IsValid(value : any) : boolean
-	if typeof(value) ~= "table" then
+	if TypeOf(value) ~= "table" then
 		return false
 	end
 	

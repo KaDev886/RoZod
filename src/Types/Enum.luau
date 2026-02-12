@@ -1,6 +1,7 @@
 --!strict
 
 local DebugContext = require(script.Parent.Parent.DebugContext)
+local TypeOf = require(script.Parent.Parent.TypeOf)
 local Base = require(script.Parent.Parent.Base)
 
 export type EnumSchema = {
@@ -28,7 +29,7 @@ EnumM.__index = EnumM
 setmetatable(EnumM, { __index = Base })
 
 local function isValidType(value : any) : boolean
-	local to = typeof(value)
+	local to = TypeOf(value)
 	return to == "Enums" or to == "Enum" or to == "EnumItem"
 end
 
