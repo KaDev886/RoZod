@@ -1,9 +1,7 @@
 # 🛡️ RoZod – Runtime Schema Validator & Coercion
-[![Version](https://img.shields.io/badge/version-0.1.2--alpha-orange)](https://github.com/KaDev886/RoZod/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-beta--yellow)](https://github.com/KaDev886/RoZod/releases)
 
 RoZod is a **runtime schema validator** designed for Roblox Luau. It allows you to validate and coerce data safely, including tables, arrays, enums, and primitive values.
-
-**Status:** Experimental
 
 ---
 
@@ -37,7 +35,7 @@ local RoZod = require(path.to.RoZod)
 Add RoZod to your `wally.toml`:
 
 ```toml
-RoZod = "kadev886/rozod@v0.1.2-alpha"
+RoZod = "kadev886/rozod@1.0.0-beta"
 ```
 
 Run:
@@ -181,23 +179,6 @@ print(playerDataSchema:IsValid(coercedPlayerData)) -- true
 ```lua
 local schema = RoZod.String():Warn()
 ```
-
----
-
-## Notes
-
-- Error paths are not implemented yet.  
-- The library is **experimental**: functional but still in development.  
-- Use `IsValid` for quick checks and `Validate` for debugging.  
-- `Coerce` always returns a consistent and valid value.
-
----
-
-## Future Improvements
-
-- Full error paths (`Inventory[2].Price`)
-- More detailed and consistent messages
-- More types
 
 ---
 

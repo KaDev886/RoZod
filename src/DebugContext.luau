@@ -2,7 +2,7 @@ export type DebugContext = {
 	messages: {any},
 	
 	new: () -> DebugContext,
-	Add: (self: DebugContext, policy: ("Silent" | "Warn" | "Error"), path: string, message: string) -> (),
+	Add: (self: DebugContext, policy: ("Silent" | "Warn" | "Error"), message: string, path: string) -> (),
 	Throw: (self: DebugContext) -> (),
 }
 
@@ -17,11 +17,11 @@ function DebugContext.new() : DebugContext
 	return self
 end
 
-function DebugContext:Add(policy : ("Silent" | "Warn" | "Error"), path : string, message : string)
+function DebugContext:Add(policy : ("Silent" | "Warn" | "Error"), message : string, path : string?)
 	table.insert(self.messages, {
 		type = policy,
-		path = path,
 		message = message,
+		path = path,
 	})
 end
 
@@ -30,7 +30,13 @@ function DebugContext:Throw()
 	local warnMsg = ""
 	
 	for i, msg in ipairs(self.messages) do
-		local finalMsg = `[RoZod] {msg.type}: {msg.path} - {msg.message}`
+		local finalMsg = `[RoZod] {msg.type}: `
+
+		if not msg.path then
+			finalMsg = finalMsg .. msg.message
+		else
+			finalMsg = finalMsg .. `{msg.path} | {msg.message}`
+		end
 		
 		if msg.type == "Error" then
 			errorMsg = errorMsg .. "\n" .. finalMsg

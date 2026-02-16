@@ -33,7 +33,7 @@ function Vector3M:Coerce(value : any) : Vector3
 		return value
 	end
 	
-	local result = self.default or value
+	local result = if self.default ~= nil then self.default else value
 	
 	if TypeOf(result) ~= "Vector3" then
 		result = Vector3.zero
@@ -42,11 +42,15 @@ function Vector3M:Coerce(value : any) : Vector3
 	return Base.Coerce(self, result)
 end
 
-function Vector3M:Validate(value : any, dc : DebugContext.DebugContext?)
+function Vector3M:Validate(value : any, dc : DebugContext.DebugContext?, path : string?)
 	local newDc = self:_getValidDc(dc)
+
+	if value == nil and self.optional then
+		return
+	end
 	
 	if TypeOf(value) ~= "Vector3" then
-		newDc:Add(self.policy, self.type, `Expected Vector3, got '{TypeOf(value)}'`)
+		newDc:Add(self.policy, self.type, `Expected Vector3, got '{TypeOf(value)}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -55,16 +59,18 @@ function Vector3M:Validate(value : any, dc : DebugContext.DebugContext?)
 		return
 	end
 	
-	if not Base.IsValid(self, value) then
-		Base.Validate(self, value, newDc)
-		
-		if dc ~= newDc then
-			newDc:Throw()
-		end
+	Base.Validate(self, value, newDc, path)
+	
+	if dc ~= newDc then
+		newDc:Throw()
 	end
 end
 
 function Vector3M:IsValid(value : any) : boolean
+	if value == nil and self.optional then
+		return true
+	end
+
 	if TypeOf(value) ~= "Vector3" then
 		return false
 	end

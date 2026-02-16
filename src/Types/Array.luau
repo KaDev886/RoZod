@@ -4,6 +4,7 @@ local DebugContext = require(script.Parent.Parent.DebugContext)
 local TypeOf = require(script.Parent.Parent.TypeOf)
 local Utils = require(script.Parent.Parent.Utils)
 local Base = require(script.Parent.Parent.Base)
+local Any = require(script.Parent.Any)
 
 export type ArraySchema = {
 	type: string,
@@ -37,12 +38,56 @@ Array.__index = Array
 setmetatable(Array, { __index = Base })
 
 function Array:MinLength(minLength : number) : ArraySchema
+	local newDc = self:_getValidDc()
+
+	if TypeOf(minLength) ~= "number" then
+		newDc:Add("Error", `Expected number for minLength, got '{TypeOf(minLength)}'`)
+		newDc:Throw()
+	end
+
+	if minLength == math.huge then
+		newDc:Add("Error", `minLength cannot be infinity`)
+		newDc:Throw()
+	end
+
+	if self.maxLength and minLength > self.maxLength then
+		newDc:Add(
+			"Error", 
+			`minLength cannot be greater than maxLength. Expected at most {self.maxLength}, got {minLength}`
+		)
+		newDc:Throw()
+	end
+
 	self.minLength = minLength
+	self:_validateDefault()
+	
 	return self
 end
 
 function Array:MaxLength(maxLength : number) : ArraySchema
+	local newDc = self:_getValidDc()
+
+	if TypeOf(maxLength) ~= "number" then
+		newDc:Add("Error", `Expected number for maxLength, got '{TypeOf(maxLength)}'`)
+		newDc:Throw()
+	end
+
+	if maxLength < 0 then
+		newDc:Add("Error", `maxLength cannot be negative`)
+		newDc:Throw()
+	end
+
+	if self.minLength and maxLength < self.minLength then
+		newDc:Add(
+			"Error", 
+			`maxLength cannot be less than minLength. Expected at least {self.minLength}, got {maxLength}`
+		)
+		newDc:Throw()
+	end
+	
 	self.maxLength = maxLength
+	self:_validateDefault()
+
 	return self
 end
 
@@ -51,11 +96,7 @@ function Array:Coerce(value : any) : ({} | { any })
 		return value
 	end
 	
-	local result = self.default or value
-	
-	if not self.arrayType then
-		return {}
-	end
+	local result = if self.default ~= nil then self.default else value
 	
 	if TypeOf(result) ~= "table" then
 		result = {}
@@ -71,18 +112,22 @@ function Array:Coerce(value : any) : ({} | { any })
 		result = Utils.sliceTable(result, 1, self.maxLength)
 	end
 	
-	for key, val in result do
+	for key, val in ipairs(result) do
 		result[key] = self.arrayType:Coerce(val)
 	end
 	
-	return result
+	return Base.Coerce(self, result)
 end
 
-function Array:Validate(value : any, dc : DebugContext.DebugContext?)
+function Array:Validate(value : any, dc : DebugContext.DebugContext?, path : string?)
 	local newDc = self:_getValidDc(dc)
+
+	if value == nil and self.optional then
+		return
+	end
 	
 	if TypeOf(value) ~= "table" then
-		newDc:Add(self.policy, self.type, `Expected array, got '{TypeOf(value)}'`)
+		newDc:Add(self.policy, `Expected array, got '{TypeOf(value)}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -92,7 +137,11 @@ function Array:Validate(value : any, dc : DebugContext.DebugContext?)
 	end
 	
 	if self.minLength and #value < self.minLength then
-		newDc:Add(self.policy, self.type, `Array is too small`)
+		newDc:Add(
+			self.policy, 
+			`Array is too small. Expected at least {self.minLength} elements, got {#value}`, 
+			path
+		)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -102,7 +151,11 @@ function Array:Validate(value : any, dc : DebugContext.DebugContext?)
 	end
 	
 	if self.maxLength and #value > self.maxLength then
-		newDc:Add(self.policy, self.type, `Array is too large`)
+		newDc:Add(
+			self.policy, 
+			`Array is too large. Expected at most {self.maxLength} elements, got {#value}`, 
+			path
+		)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -111,12 +164,24 @@ function Array:Validate(value : any, dc : DebugContext.DebugContext?)
 		return
 	end
 	
-	for _, val in value do
-		self.arrayType:Validate(val, newDc)
+	for key, val in value do
+		local newPath = path and `{path}[{tostring(key)}]` or `[{tostring(key)}]`
+
+		self.arrayType:Validate(val, newDc, newPath)
+	end
+
+	Base.Validate(self, value, newDc, path)
+
+	if dc ~= newDc then
+		newDc:Throw()
 	end
 end
 
 function Array:IsValid(value : any) : boolean
+	if value == nil and self.optional then
+		return true
+	end
+	
 	if TypeOf(value) ~= "table" then
 		return false
 	end
@@ -135,16 +200,16 @@ function Array:IsValid(value : any) : boolean
 		end
 	end
 	
-	return true
+	return Base.IsValid(self, value)
 end
 
 return function(arrayType : any) : ArraySchema
 	local self = setmetatable(Base.new(), Array) :: ArraySchema
 	
 	self.type = script.Name
-	
-	self.arrayType = arrayType
-	
+
+	self.arrayType = if TypeOf(arrayType) == "Schema" then arrayType else Any()
+
 	self.minLength = 0
 	self.maxLength = math.huge
 	

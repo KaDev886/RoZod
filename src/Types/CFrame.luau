@@ -33,7 +33,7 @@ function CFrameM:Coerce(value : any) : CFrame
 		return value
 	end
 	
-	local result = self.default or value
+	local result = if self.default ~= nil then self.default else value
 	
 	if TypeOf(result) ~= "CFrame" then
 		result = CFrame.identity
@@ -42,11 +42,15 @@ function CFrameM:Coerce(value : any) : CFrame
 	return Base.Coerce(self, result)
 end
 
-function CFrameM:Validate(value : any, dc : DebugContext.DebugContext?)
+function CFrameM:Validate(value : any, dc : DebugContext.DebugContext?, path : string?) : ()
 	local newDc = self:_getValidDc(dc)
 	
+	if value == nil and self.optional then
+		return
+	end
+	
 	if TypeOf(value) ~= "CFrame" then
-		newDc:Add(self.policy, self.type, `Expected CFrame, got '{TypeOf(value)}'`)
+		newDc:Add(self.policy, `Expected CFrame, got '{TypeOf(value)}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -55,16 +59,18 @@ function CFrameM:Validate(value : any, dc : DebugContext.DebugContext?)
 		return
 	end
 	
-	if not Base.IsValid(self, value) then
-		Base.Validate(self, value, newDc)
-
-		if dc ~= newDc then
-			newDc:Throw()
-		end
+	Base.Validate(self, value, newDc, path)
+	
+	if dc ~= newDc then
+		newDc:Throw()
 	end
 end
 
 function CFrameM:IsValid(value : any) : boolean
+	if value == nil and self.optional then
+		return true
+	end
+	
 	if TypeOf(value) ~= "CFrame" then
 		return false
 	end

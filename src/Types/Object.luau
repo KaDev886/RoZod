@@ -44,7 +44,7 @@ function Object:Coerce(value : any) : ({} | {[any] : any})
 		return value
 	end
 	
-	local result = self.default or value
+	local result = if self.default ~= nil then self.default else value
 	
 	if TypeOf(result) ~= "table" then
 		result = {}
@@ -54,22 +54,12 @@ function Object:Coerce(value : any) : ({} | {[any] : any})
 	
 	local shape = self.shape :: {[any] : any}
 	
-	for key, rule in pairs(shape) do
+	for key, rule in shape do
 		result[key] = rule:Coerce(result[key])
-		
-		if result[key] == nil and (rule :: any).optional then
-			result[key] = nil
-		end
 	end
 	
 	if not self.extra then
 		for key, _ in result do
-			local rule : any = shape[key]
-			
-			if rule and rule.optional then
-				continue
-			end
-			
 			if shape[key] then
 				continue
 			end
@@ -78,14 +68,18 @@ function Object:Coerce(value : any) : ({} | {[any] : any})
 		end
 	end
 	
-	return result
+	return Base.Coerce(self, result)
 end
 
-function Object:Validate(value : ({} | {[any] : any}), dc : DebugContext.DebugContext?)
+function Object:Validate(value : ({} | {[any] : any}), dc : DebugContext.DebugContext?, path : string?) : ()
 	local newDc = self:_getValidDc(dc)
 
+	if value == nil and self.optional then
+		return
+	end
+
 	if TypeOf(value) ~= "table" then
-		newDc:Add(self.policy, self.type, `Expected a table, got '{TypeOf(value)}'`)
+		newDc:Add(self.policy, `Expected a table, got '{TypeOf(value)}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -96,23 +90,19 @@ function Object:Validate(value : ({} | {[any] : any}), dc : DebugContext.DebugCo
 	
 	local result = true
 	
-	for key, rule in pairs(self.shape) do
-		if value[key] == nil and (rule :: any).optional then
-			continue
-		end
-		
-		if value[key] == nil then
-			newDc:Add((rule :: any).policy, self.type, `Missing required key '{tostring(key)}'`)
+	for key, rule in self.shape do
+		if not (rule :: any):IsValid(value[key]) then
+			if value[key] == nil then
+				newDc:Add(self.policy, `Missing required key '{tostring(key)}'`, path)
+			else
+				newDc:Add(self.policy, `Invalid value for key '{tostring(key)}'`, path)
+			end
 			
+			local newPath = path and `{path}.{tostring(key)}` or `{tostring(key)}`
+
+			(rule :: any):Validate(value[key], newDc, newPath)
+
 			result = false
-		end
-		
-		if value[key] ~= nil and not (rule :: any):IsValid(value[key]) then
-			newDc:Add((rule :: any).policy, self.type, `Invalid value for key '{tostring(key)}'`)
-			
-			result = false
-			
-			(rule :: any):Validate(value[key], newDc)
 		end
 	end
 	
@@ -128,14 +118,8 @@ function Object:Validate(value : ({} | {[any] : any}), dc : DebugContext.DebugCo
 		local result = true
 		
 		for key, _ in value do
-			local rule = self.shape[key]
-			
-			if rule and (rule :: any).optional then
-				continue
-			end
-			
-			if not rule then
-				newDc:Add(self.policy, self.type, `Unexpected extra key '{tostring(key)}'`)
+			if not self.shape[key] then
+				newDc:Add(self.policy, `Unexpected extra key '{tostring(key)}'`, path)
 				
 				result = false
 			end
@@ -147,44 +131,38 @@ function Object:Validate(value : ({} | {[any] : any}), dc : DebugContext.DebugCo
 			end
 		end
 	end
+
+	Base.Validate(self, value, newDc, path)
+
+	if dc ~= newDc then
+		newDc:Throw()
+	end
 end
 
 function Object:IsValid(value : any) : boolean
+	if value == nil and self.optional then
+		return true
+	end
+
 	if TypeOf(value) ~= "table" then
 		return false
 	end
 	
-	for key, rule in pairs(self.shape) do
-		if value[key] == nil and (rule :: any).optional then
-			continue
-		end
-		
-		if value[key] == nil then
-			return false
-		end
-		
-		if value[key] ~= nil and not (rule :: any):IsValid(value[key]) then
+	for key, rule in self.shape do
+		if not (rule :: any):IsValid(value[key]) then
 			return false
 		end
 	end
 	
 	if not self.extra then
-		local result = true
-
 		for key, _ in value do
-			local rule = self.shape[key]
-
-			if rule and (rule :: any).optional then
-				continue
-			end
-
-			if not rule then
+			if not self.shape[key] then
 				return false
 			end
 		end
 	end
 	
-	return true
+	return Base.IsValid(self, value)
 end
 
 return function(shape : {[any] : any}) : ObjectSchema

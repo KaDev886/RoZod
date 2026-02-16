@@ -38,7 +38,7 @@ function EnumM:Coerce(value : any) : (Enums | Enum | EnumItem)
 		return value
 	end
 	
-	local result = self.default or value
+	local result = if self.default ~= nil then self.default else value
 	
 	if not isValidType(result) then
 		result = Enum
@@ -47,11 +47,15 @@ function EnumM:Coerce(value : any) : (Enums | Enum | EnumItem)
 	return Base.Coerce(self, result)
 end
 
-function EnumM:Validate(value : any, dc : DebugContext.DebugContext?)
+function EnumM:Validate(value : any, dc : DebugContext.DebugContext?, path : string?)
 	local newDc = self:_getValidDc(dc)
-	
+
+	if value == nil and self.optional then
+		return
+	end
+
 	if not isValidType(value) then
-		newDc:Add(self.policy, self.type, `Expected Enums, Enum or EnumItem, got '{typeof(value)}'`)
+		newDc:Add(self.policy, `Expected Enums, Enum or EnumItem, got '{TypeOf(value)}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -60,16 +64,18 @@ function EnumM:Validate(value : any, dc : DebugContext.DebugContext?)
 		return
 	end
 	
-	if not Base.IsValid(self, value) then
-		Base.Validate(self, value, newDc)
-
-		if dc ~= newDc then
-			newDc:Throw()
-		end
+	Base.Validate(self, value, newDc, path)
+	
+	if dc ~= newDc then
+		newDc:Throw()
 	end
 end
 
 function EnumM:IsValid(value : any) : boolean
+	if value == nil and self.optional then
+		return true
+	end
+	
 	if not isValidType(value) then
 		return false
 	end
