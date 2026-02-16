@@ -1,12 +1,6 @@
 {
   "name": "rozod",
   "tree": {
-    "$className": "DataModel",
-    
-    "ReplicatedStorage": {
-      "RoZod" : {
-        "$path": "src"
-      }
-    }
+    "$path": "src"
   }
 }
