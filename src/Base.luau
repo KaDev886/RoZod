@@ -1,45 +1,41 @@
 --!strict
 
 local DebugContext = require(script.Parent.DebugContext)
-local TypeOf = require(script.Parent.TypeOf)
+local typeOf = require(script.Parent.typeOf)
 
-export type BaseSchema = {
-	type: string,
+export type BaseSchema<Self, Coerced> = {
 	expecteds: ({} | { any }),
 	optional: boolean,
 	default: any,
-	policy: "Silent" | "Warn" | "Error",
 	
-	Silent: (self: BaseSchema) -> BaseSchema,
-	Warn: (self: BaseSchema) -> BaseSchema,
-	Error: (self: BaseSchema) -> BaseSchema,
-	Default: (self: BaseSchema, value: any) -> BaseSchema,
-	Expected: (self: BaseSchema, expecteds: { any }) -> BaseSchema,
-	Optional: (self: BaseSchema) -> BaseSchema,
+	Silent: (self: Self) -> Self,
+	Warn: (self: Self) -> Self,
+	Error: (self: Self) -> Self,
+	Default: (self: Self, value: any) -> Self,
+	Expected: (self: Self, expecteds: { any }) -> Self,
+	Optional: (self: Self) -> Self,
 	
-	Coerce: (self: BaseSchema, value: any) -> any,
-	Validate: (self: BaseSchema, value: any) -> (),
-	IsValid: (self: BaseSchema, value: any) -> boolean,
+	Coerce: (self: Self, value: any) -> Coerced,
+	Validate: (self: Self, value: any) -> (),
+	IsValid: (self: Self, value: any) -> boolean,
 }
 
 local Base = {}
 Base.__index = Base
 
-function Base.new() : BaseSchema
-	local self = setmetatable({}, Base) :: BaseSchema
+function Base.new<Self, Coerced>() : BaseSchema<Self, Coerced>
+	local self = setmetatable({}, Base) :: any
 	
-	self.type = "Base"
 	self.expecteds = {}
 	self.optional = false
 	self.default = nil
-	self.policy = "Error"
-	
+
 	return self
 end
 
-function Base:_getValidDc(dc : DebugContext.DebugContext?) : DebugContext.DebugContext
+function Base:_getValidDc(dc : DebugContext.dc?) : DebugContext.dc
 	if dc then
-		if TypeOf(dc) == "DebugContext" then
+		if typeOf(dc) == "DebugContext" then
 			return dc
 		else
 			return DebugContext.new()
@@ -62,33 +58,63 @@ function Base:_validateDefault()
 	end
 end
 
-function Base:Silent() : BaseSchema
+function Base:_validate(value, dc, path, policy)
+	local newDc = self:_getValidDc(dc)
+
+	if value == nil and self.optional then 
+		return
+	end
+	
+	if #self.expecteds ~= 0 and not table.find(self.expecteds, value) then
+		local validExpecteds = {}
+		
+		for _, expected in self.expecteds do
+			if typeof(expected) == "Vector3" then
+				table.insert(validExpecteds, `({tostring(expected)})`)
+			else
+				table.insert(validExpecteds, tostring(expected))
+			end
+		end
+		
+		newDc:Add(
+			policy, 
+			`Expected one of {table.concat(validExpecteds, " | ")} got '{tostring(value)}'`,
+			path
+		)
+		
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+	end
+end
+
+function Base:Silent()
 	self.policy = "Silent"
 	return self
 end
 
-function Base:Warn() : BaseSchema
+function Base:Warn()
 	self.policy = "Warn"
 	return self
 end
 
-function Base:Error() : BaseSchema
+function Base:Error()
 	self.policy = "Error"
 	return self
 end
 
-function Base:Default(value : any) : BaseSchema
+function Base:Default(value : any)
 	self.default = value
 	self:_validateDefault()
 
 	return self
 end
 
-function Base:Expected(expecteds : { any }) : BaseSchema
+function Base:Expected(expecteds : { any })
 	local newDc = self:_getValidDc()
 	
-	if TypeOf(expecteds) ~= "table" then
-		newDc:Add("Error", `Expecteds must be a table, got '{TypeOf(expecteds)}'`)
+	if typeOf(expecteds) ~= "table" then
+		newDc:Add("Error", `Expecteds must be a table, got '{typeOf(expecteds)}'`)
 		newDc:Throw()
 		
 		return self
@@ -113,60 +139,30 @@ function Base:Expected(expecteds : { any }) : BaseSchema
 	return self
 end
 
-function Base:Optional() : BaseSchema
+function Base:Optional()
 	self.optional = true
 	return self
 end
 
-function Base:Coerce(value : any) : any
+function Base:Coerce(value : any)
 	if self:IsValid(value) then
 		return value
 	end
-	
-	local result = if self.default ~= nil then self.default else value
-	
-	if #self.expecteds ~= 0 and not table.find(self.expecteds, result) then
-		result = self.expecteds[1]
-	end
-	
-	return result
-end
 
---function Base:ForceCoerce(value : any) : any
--- ...
---end
-
-function Base:Validate(value : any, dc : DebugContext.DebugContext?, path : string?)
-	local newDc = self:_getValidDc(dc)
-
-	if value == nil and self.optional then 
-		return 
+	if self.default ~= nil then
+		return self.default
 	end
 	
 	if #self.expecteds ~= 0 and not table.find(self.expecteds, value) then
-		local validExpecteds = {}
-		
-		for _, expected in self.expecteds do
-			if typeof(expected) == "Vector3" then
-				table.insert(validExpecteds, `({tostring(expected)})`)
-			else
-				table.insert(validExpecteds, tostring(expected))
-			end
-		end
-		
-		newDc:Add(
-			self.policy, 
-			`Expected one of {table.concat(validExpecteds, " | ")} got '{tostring(value)}'`,
-			path
-		)
-		
-		if dc ~= newDc then
-			newDc:Throw()
-		end
+		return nil
 	end
 end
 
-function Base:IsValid(value : any) : boolean
+function Base:Validate(value : any)
+	self:_validate(value)
+end
+
+function Base:IsValid(value : any)
 	if value == nil and self.optional then 
 		return true
 	end

@@ -1,15 +1,18 @@
-local Types = script.Types
+local globalConfig = require(script.globalConfig)
 
-local RoZod = {}
+local Schemas = script.Schemas
 
-RoZod.Any = require(Types.Any)
-RoZod.Object = require(Types.Object)
-RoZod.Array = require(Types.Array)
-RoZod.Number = require(Types.Number)
-RoZod.String = require(Types.String)
-RoZod.Boolean = require(Types.Boolean)
-RoZod.Enum = require(Types.Enum)
-RoZod.Vector3 = require(Types.Vector3)
-RoZod.CFrame = require(Types.CFrame)
+return {
+    setGlobalConfig = globalConfig.setGlobalConfig,
+    getGlobalConfig = globalConfig.getGlobalConfig,
 
-return RoZod
+    Any = require(Schemas.Any),
+    Object = require(Schemas.Object),
+    Array = require(Schemas.Array),
+    Number = require(Schemas.Number),
+    String = require(Schemas.String),
+    Boolean = require(Schemas.Boolean),
+    Enum = require(Schemas.Enum),
+    Vector3 = require(Schemas.Vector3),
+    CFrame = require(Schemas.CFrame),
+}

@@ -1,37 +1,42 @@
-export type DebugContext = {
+--!strict
+local globalConfig = require(script.Parent.globalConfig)
+
+export type dc = {
 	messages: {any},
 	
-	new: () -> DebugContext,
-	Add: (self: DebugContext, policy: ("Silent" | "Warn" | "Error"), message: string, path: string) -> (),
-	Throw: (self: DebugContext) -> (),
+	new: () -> dc,
+	Add: (self: dc, policy: ("Silent" | "Warn" | "Error")?, message: string, path: string?) -> (),
+	Throw: (self: dc) -> (),
 }
 
 local DebugContext = {}
 DebugContext.__index = DebugContext
 
-function DebugContext.new() : DebugContext
-	local self = setmetatable({}, DebugContext) :: DebugContext
+function DebugContext.new() : dc
+	local self = setmetatable({}, DebugContext) :: any
 
 	self.messages = {}
-	
+
 	return self
 end
 
-function DebugContext:Add(policy : ("Silent" | "Warn" | "Error"), message : string, path : string?)
+function DebugContext:Add(policy : ("Silent" | "Warn" | "Error")?, message : string, path : string?)
 	table.insert(self.messages, {
-		type = policy,
+		type = policy or "Error",
 		message = message,
 		path = path,
 	})
 end
 
 function DebugContext:Throw()
+	local config = globalConfig.getGlobalConfig()
+
 	local errorMsg = ""
 	local warnMsg = ""
-	
-	for i, msg in ipairs(self.messages) do
-		local finalMsg = `[RoZod] {msg.type}: `
 
+	for i, msg in ipairs(self.messages) do
+		local finalMsg = `[{config.debugName}] {msg.type}: `
+		
 		if not msg.path then
 			finalMsg = finalMsg .. msg.message
 		else

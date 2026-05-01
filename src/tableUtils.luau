@@ -8,10 +8,10 @@ function Utils.copyTable(t)
 	local copy = {}
 	
 	for key, value in t do
-		if typeof(value) ~= "table" then
-			copy[key] = value
-		else
+		if typeof(value) == "table" then
 			copy[key] = Utils.copyTable(value)
+		else
+			copy[key] = value
 		end
 	end
 	
