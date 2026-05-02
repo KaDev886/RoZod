@@ -1,4 +1,4 @@
-# 🛡️ RoZod – Runtime Schema Validator & Coercion for Roblox Luau
+# 🛡️ RoZod – Runtime Schema Validator & Coercion
 
 RoZod helps prevent invalid or unexpected data from reaching your game logic in Roblox Luau by validating and optionally correcting (coercing) values at runtime.
 
