@@ -3,7 +3,6 @@ name = "kadev886/rozod"
 version = "1.0.1"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
-include = ["src"]
 
 [configuration]
 entry_point = "src/init.luau"

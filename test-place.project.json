@@ -1,0 +1,22 @@
+{
+  "name": "RoZod TEST PLACE",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+
+      "RoZod": {
+        "$path": "src"
+      },
+
+      "Tests": {
+        "$path": "tests"
+      },
+
+      "DevPackages": {
+        "$path": "DevPackages"
+      }
+    }
+  }
+}
