@@ -180,6 +180,11 @@ print(playerDataSchema:IsValid(coercedPlayerData)) -- true
 local schema = RoZod.String():Warn()
 ```
 
+## Contributing
+
+Contributions are welcome.  
+Please open an issue before submitting a PR.
+
 ---
 
 *Developed by [Kecase_no_se]()*
