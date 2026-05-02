@@ -9,3 +9,5 @@ entry_point = "src/init.luau"
 
 [dev-dependencies]
 TestEZ = "roblox/testez@0.4.1"
+
+include = ["src"]

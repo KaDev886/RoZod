@@ -4,9 +4,9 @@
     "$className": "DataModel",
 
     "ReplicatedStorage": {
-      "RoZod" : {
-        "$path": "src"
-      }
+      "DevPackages": { "$path": "DevPackages" },
+      "Tests": { "$path": "tests" },
+      "RoZod": { "$path": "src" }
     }
   }
 }
