@@ -1,20 +1,28 @@
-# 🛡️ RoZod – Runtime Schema Validator & Coercion
-[![Version](https://img.shields.io/badge/version-1.0.1-green)](https://github.com/KaDev886/RoZod/releases)
+# 🛡️ RoZod – Runtime Schema Validator & Coercion for Roblox Luau
 
-RoZod is a **runtime schema validator** designed for Roblox Luau. It allows you to validate and coerce data safely, including tables, arrays, enums, and primitive values.
+RoZod helps prevent invalid or unexpected data from reaching your game logic in Roblox Luau by validating and optionally correcting (coercing) values at runtime.
+
+It is designed for data systems where consistency matters, such as inventories, player stats, settings, or saved data.
 
 ---
 
-## Why use RoZod?
+## Why RoZod exists
 
-RoZod helps prevent common mistakes when handling player data or game configurations by automatically validating your data structures:
+In Roblox games, data often arrives from:
 
-- Prevents invalid or unexpected values.
-- Coerces broken values to always return something valid.
-- Generates errors or warnings according to policy (`Error`, `Warn`, `Silent`).
-- Handles objects (`Object`), lists (`Array`), and Roblox enums (`Enum`, `EnumItem`).
+* DataStores
+* RemoteEvents
+* External inputs
+* Player manipulation
 
-This is especially useful for inventories, player stats, settings, or any data system that requires consistency.
+These sources can produce invalid or unexpected values that silently break systems.
+
+RoZod provides a way to:
+
+* Validate data structures at runtime
+* Detect invalid values early
+* Optionally coerce invalid values into safe defaults
+* Apply consistent rules across your entire data layer
 
 ---
 
@@ -22,29 +30,33 @@ This is especially useful for inventories, player stats, settings, or any data s
 
 ### Installation
 
-**Option 1: Manual (`.rbxm`)**
-1. Download the latest `RoZod.rbxm` from the [Releases](https://github.com/KaDev886/RoZod/releases) page.
-2. Insert the RoZod ModuleScript anywhere in your project (e.g., ReplicatedStorage or ServerScriptService) and require it from your scripts.
+#### Option 1: Manual (.rbxm)
+
+1. Download `RoZod.rbxm` from the [Releases](https://github.com/KaDev886/RoZod/releases)
+2. Insert it into your place (ReplicatedStorage / ServerScriptService)
+3. Require it:
 
 ```lua
 local RoZod = require(path.to.RoZod)
 ```
 
-**Option 2: Wally**
+---
 
-Add RoZod to your `wally.toml`:
+#### Option 2: Wally
+
+Add to `wally.toml`:
 
 ```toml
 RoZod = "kadev886/rozod@1.0.1"
 ```
 
-Run:
+Install:
 
 ```bash
 wally install
 ```
 
-Then require it in your code:
+Require:
 
 ```lua
 local RoZod = require(Packages.RoZod)
@@ -52,139 +64,138 @@ local RoZod = require(Packages.RoZod)
 
 ---
 
-## Basic Usage
+## Basic Example
 
 ```lua
--- Define a simple schema
-local nameSchema = RoZod.String()
+local schema = RoZod.String()
 
--- Validate a value
-print(nameSchema:IsValid("John"))  -- true
-print(nameSchema:IsValid(123))      -- false
+print(schema:IsValid("John")) -- true
+print(schema:IsValid(123))     -- false
 ```
 
 ---
 
-## Example: Player Data Schema
+## Example: Player Inventory
+
+Invalid values are common in game data (for example negative amounts or wrong types).
+
+RoZod can validate and optionally fix them.
 
 ```lua
--- Define item schema
 local itemsName = {"Wood", "Sword", "Helmet"}
 local itemsTypes = {"Resource", "Weapon", "Armor"}
 
 local itemSchema = RoZod.Object({
-	Name = RoZod.String():Expected(itemsName),
-	Type = RoZod.String():Expected(itemsTypes),
-	Amount = RoZod.Number():Min(1),
+    Name = RoZod.String():Expected(itemsName),
+    Type = RoZod.String():Expected(itemsTypes),
+    Amount = RoZod.Number():Min(1),
 })
 
--- Define inventory schema
 local inventorySchema = RoZod.Object({
-	Items = RoZod.Array(itemSchema),
+    Items = RoZod.Array(itemSchema),
 })
 
--- Define player data schema
 local playerDataSchema = RoZod.Object({
-	Inventory = inventorySchema,
+    Inventory = inventorySchema,
 })
 
--- Example player data
 local playerData = {
-	Inventory = {
-		Items = {
-			{ Name = "Wood", Type = "Resource", Amount = 10 },
-			{ Name = "Sword", Type = "Weapon", Amount = 1 },
-			{ Name = "Helmet", Type = "Armor", Amount = -10 }, -- invalid amount
-		},
-	},
+    Inventory = {
+        Items = {
+            { Name = "Wood", Type = "Resource", Amount = 10 },
+            { Name = "Sword", Type = "Weapon", Amount = 1 },
+            { Name = "Helmet", Type = "Armor", Amount = -10 }, -- invalid
+        },
+    },
 }
 
--- Validate player data
-playerDataSchema:Validate(playerData) -- this gives error
+playerDataSchema:Validate(playerData)
 ```
 
 ---
 
-## Example 2: Player Data Schema
+## Validation vs Coercion
+
+RoZod supports two approaches:
+
+### Validation (strict)
+
 ```lua
--- Define item schema
-local itemsName = {"Wood", "Sword", "Helmet"}
-local itemsTypes = {"Resource", "Weapon", "Armor"}
-
-local itemSchema = RoZod.Object({
-	Name = RoZod.String():Expected(itemsName),
-	Type = RoZod.String():Expected(itemsTypes),
-	Amount = RoZod.Number():Min(1),
-})
-
--- Define inventory schema
-local inventorySchema = RoZod.Object({
-	Items = RoZod.Array(itemSchema),
-})
-
--- Define player data schema
-local playerDataSchema = RoZod.Object({
-	Inventory = inventorySchema,
-})
-
--- Example player data
-local playerData = {
-	Inventory = {
-		Items = {
-			{ Name = "Wood", Type = "Resource", Amount = 10 },
-			{ Name = "Sword", Type = "Weapon", Amount = 1 },
-			{ Name = "Helmet", Type = "Armor", Amount = -10 }, -- invalid amount
-		},
-	},
-}
-
 print(playerDataSchema:IsValid(playerData)) -- false
-
--- Coerce player data
-local coercedPlayerData = playerDataSchema:Coerce(playerData)
-
-print(playerDataSchema:IsValid(coercedPlayerData)) -- true
 ```
 
+### Coercion (safe correction)
+
+```lua
+local fixed = playerDataSchema:Coerce(playerData)
+
+print(playerDataSchema:IsValid(fixed)) -- true
+```
+
+Coercion attempts to ensure the output matches the schema by applying safe defaults or corrections when possible; otherwise it may return `nil` if no valid coercion path exists.
+
 ---
 
-## Main Functions
+## Core API
 
-| Function | Description |
-|---------|-------------|
-| `IsValid(value)` | Returns `true` if the value matches the schema, `false` otherwise. Does not throw errors. |
-| `Validate(value)` | Validates the value and throws warnings/errors depending on policy. |
-| `Coerce(value)` | Returns a valid value even if the original is invalid, applying defaults and coercion. |
+Coercion behavior note: depending on the schema and input, `Coerce` may return either a valid coerced value or `nil` when coercion is not possible (similar in spirit to `tonumber` / `tostring` behavior patterns in Luau).
+
+| Function          | Description                                                 |
+| ----------------- | ----------------------------------------------------------- |
+| `IsValid(value)`  | Checks if a value matches the schema (no errors thrown)     |
+| `Validate(value)` | Validates and reports errors depending on policy            |
+| `Coerce(value)`   | Attempts to fix invalid values and return a valid structure |
 
 ---
 
-## Types and Policies
+## Supported Types
 
-- **Types**:
-  - `Any`
-  - `Object`
-  - `Array`
-  - `Enum`
-  - `Number`
-  - `String`
-  - `Boolean`
-  - `Vector3`
-  - `CFrame`
-  
-- **Policies**:
-  - `Error` → blocks execution and shows error.
-  - `Warn` → shows warning, does not block.
-  - `Silent` → ignores error/warning.
+* Any
+* Object
+* Array
+* Enum
+* Number
+* String
+* Boolean
+* Vector3
+* CFrame
+
+---
+
+## Policies
+
+RoZod can behave differently depending on the policy:
+
+* `Error` → stops execution on invalid data
+* `Warn` → prints warning but continues
+* `Silent` → ignores validation issues
 
 ```lua
 local schema = RoZod.String():Warn()
 ```
 
-## Contributing
+---
 
-Contributions are welcome.  
-Please open an issue before submitting a PR.
+## Design Goal
+
+RoZod is not meant to replace game logic.
+
+It is meant to:
+
+* Reduce silent data bugs
+* Centralize validation rules
+* Make game data safer and more predictable
 
 ---
 
-*Developed by [Kecase_no_se]()*
+## Contributing
+
+Issues and pull requests are welcome.
+
+If proposing changes, it is recommended to open an issue first.
+
+---
+
+## License
+
+MIT
