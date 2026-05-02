@@ -1,7 +1,7 @@
 -- init.spec.luau
 
-local TestEZ = require(script.TestEZ)
-local RoZod = require(script.RoZod) -- Adjust the path according to your module
+local TestEZ = require(game.ReplicatedStorage.TestEZ)
+local RoZod = require(gane.ReplicatedStorage.RoZod)
 
 local function runStringTests()
     local schema = RoZod.string()
