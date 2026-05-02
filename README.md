@@ -1,5 +1,5 @@
 # 🛡️ RoZod – Runtime Schema Validator & Coercion
-[![Version](https://img.shields.io/badge/version-1.0.0-green)](https://github.com/KaDev886/RoZod/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1--stable-green)](https://github.com/KaDev886/RoZod/releases)
 
 RoZod is a **runtime schema validator** designed for Roblox Luau. It allows you to validate and coerce data safely, including tables, arrays, enums, and primitive values.
 
@@ -35,7 +35,7 @@ local RoZod = require(path.to.RoZod)
 Add RoZod to your `wally.toml`:
 
 ```toml
-RoZod = "kadev886/rozod@1.0.0"
+RoZod = "kadev886/rozod@1.0.1"
 ```
 
 Run:
