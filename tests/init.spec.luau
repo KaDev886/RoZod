@@ -1,7 +1,7 @@
 -- init.spec.luau
 
 local TestEZ = require(game.ReplicatedStorage.TestEZ)
-local RoZod = require(gane.ReplicatedStorage.RoZod)
+local RoZod = require(game.ReplicatedStorage.RoZod)
 
 local function runStringTests()
     local schema = RoZod.string()
