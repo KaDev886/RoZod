@@ -3,11 +3,10 @@ name = "kadev886/rozod"
 version = "1.0.1"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
+include = ["src"]
 
 [configuration]
 entry_point = "src/init.luau"
 
 [dev-dependencies]
 TestEZ = "roblox/testez@0.4.1"
-
-include = ["src"]
