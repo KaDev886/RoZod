@@ -9,7 +9,7 @@ export type BooleanSchema = Base.BaseSchema<BooleanSchema, boolean?>
 local Boolean = {}
 Boolean.__index = Boolean
 
-setmetatable(Boolean, { __index = Base })
+setmetatable(Boolean, Base)
 
 function Boolean.new() : BooleanSchema
 	return setmetatable(Base.new(), Boolean) :: any
