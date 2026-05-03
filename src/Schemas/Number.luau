@@ -3,10 +3,10 @@
 local typeOf = require(script.Parent.Parent.typeOf)
 local Base = require(script.Parent.Parent.Base)
 
-export type NumberSchema = Base.BaseSchema<NumberSchema & {
+export type NumberSchema = Base.BaseSchema<NumberSchema, number?> & {
 	Min: (self: NumberSchema, minValue: number) -> NumberSchema,
 	Max: (self: NumberSchema, maxValue: number) -> NumberSchema,
-}, number?>
+}
 
 local Number = {}
 Number.__index = Number

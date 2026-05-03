@@ -6,10 +6,10 @@ local tableUtils = require(script.Parent.Parent.tableUtils)
 local Base = require(script.Parent.Parent.Base)
 local Any = require(script.Parent.Any)
 
-export type ArraySchema = Base.BaseSchema<ArraySchema & {
+export type ArraySchema = Base.BaseSchema<ArraySchema, ({} | { any })?> & {
 	MinLength : (self : ArraySchema, minLength : number) -> ArraySchema,
 	MaxLength : (self : ArraySchema, maxLength : number) -> ArraySchema,
-}, ({} | { any })?>
+}
 
 local Array = {}
 Array.__index = Array

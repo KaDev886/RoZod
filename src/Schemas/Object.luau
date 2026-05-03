@@ -5,9 +5,9 @@ local toType = require(script.Parent.Parent.toType)
 local tableUtils = require(script.Parent.Parent.tableUtils)
 local Base = require(script.Parent.Parent.Base)
 
-export type ObjectSchema = Base.BaseSchema<ObjectSchema & {
+export type ObjectSchema = Base.BaseSchema<ObjectSchema, ({} | {[any] : any})?> & {
 	Extra: (self: ObjectSchema) -> ObjectSchema,
-}, ({} | {[any] : any})?>
+}
 
 local Object = {}
 Object.__index = Object

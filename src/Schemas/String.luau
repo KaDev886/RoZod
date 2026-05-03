@@ -3,15 +3,15 @@
 local typeOf = require(script.Parent.Parent.typeOf)
 local Base = require(script.Parent.Parent.Base)
 
-export type StringSchema = Base.BaseSchema<StringSchema & {
+export type StringSchema = Base.BaseSchema<StringSchema, string?> & {
 	MinLength: (self: StringSchema, minLength: number) -> StringSchema,
 	MaxLength: (self: StringSchema, maxLength: number) -> StringSchema,
-}, string?>
+}
 
 local String = {}
 String.__index = String
 
-setmetatable(String, { __index = Base })
+setmetatable(String, Base)
 
 function String.new() : StringSchema
 	local self = setmetatable(Base.new(), String) :: any
