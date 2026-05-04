@@ -161,7 +161,7 @@ function String:Coerce(value : any) : string?
 end
 
 function String:Validate(value : any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function String:IsValid(value : any) : boolean

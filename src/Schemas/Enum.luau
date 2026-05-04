@@ -67,7 +67,7 @@ function EnumM:Coerce(value : any) : (Enum | EnumItem)
 end
 
 function EnumM:Validate(value : any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function EnumM:IsValid(value : any) : boolean

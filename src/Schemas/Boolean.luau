@@ -62,7 +62,7 @@ function Boolean:Coerce(value : any) : boolean
 end
 
 function Boolean:Validate(value : any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function Boolean:IsValid(value : any) : boolean

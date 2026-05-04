@@ -62,7 +62,7 @@ function Vector3M:Coerce(value : any) : Vector3?
 end
 
 function Vector3M:Validate(value : any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function Vector3M:IsValid(value : any) : boolean

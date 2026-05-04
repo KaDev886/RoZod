@@ -57,7 +57,7 @@ function Any:Coerce(value: any) : any
 end
 
 function Any:Validate(value: any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function Any:IsValid(value : any) : boolean

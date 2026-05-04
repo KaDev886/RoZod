@@ -62,7 +62,7 @@ function CFrameM:Coerce(value : any) : CFrame
 end
 
 function CFrameM:Validate(value : any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function CFrameM:IsValid(value : any) : boolean

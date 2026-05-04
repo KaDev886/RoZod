@@ -78,7 +78,7 @@ function Base:_validate(value, dc, path, policy)
 		
 		newDc:Add(
 			policy, 
-			`Expected one of {table.concat(validExpecteds, " | ")} got '{tostring(value)}'`,
+			`Expected one of: {table.concat(validExpecteds, " | ")} got '{tostring(value)}'`,
 			path
 		)
 		
@@ -159,7 +159,7 @@ function Base:Coerce(value : any)
 end
 
 function Base:Validate(value : any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function Base:IsValid(value : any)

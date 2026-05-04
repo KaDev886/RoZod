@@ -27,6 +27,7 @@ function Array.new(arrayType : Any.AnySchema) : ArraySchema
 end
 
 function Array:_validate(value, dc, path, policy)
+	print(path, policy)
 	local newDc = self:_getValidDc(dc)
 
 	if value == nil and self.optional then
@@ -72,10 +73,9 @@ function Array:_validate(value, dc, path, policy)
 	end
 	
 	for key, val in value do
-		local newPolicy = self.arrayType.policy or self.policy or "Error"
 		local newPath = path and `{path}[{tostring(key)}]` or `[{tostring(key)}]`
 		
-		self.arrayType:_validate(val, newDc, newPath, newPolicy)
+		self.arrayType:_validate(val, newDc, newPath, policy or self.policy)
 	end
 
 	Base._validate(self, value, newDc, path, policy)
@@ -176,7 +176,7 @@ function Array:Coerce(value : any) : ({} | { any })
 end
 
 function Array:Validate(value : any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function Array:IsValid(value : any) : boolean

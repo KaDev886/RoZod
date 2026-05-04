@@ -149,7 +149,7 @@ function Number:Coerce(value : any) : number
 end
 
 function Number:Validate(value : any)
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function Number:IsValid(value : any) : boolean

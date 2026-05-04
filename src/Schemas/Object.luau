@@ -43,6 +43,7 @@ function Object.new(shape : {[any] : any}) : ObjectSchema
 end
 
 function Object:_validate(value, dc, path, policy)
+	print(policy)
 	local newDc = self:_getValidDc(dc)
 
 	if value == nil and self.optional then
@@ -69,10 +70,9 @@ function Object:_validate(value, dc, path, policy)
 				newDc:Add(policy, `Invalid value for key '{tostring(key)}'`, path)
 			end
 
-			local newPolicy = (rule :: any).policy or self.policy or "Error"
 			local newPath = path and `{path}.{tostring(key)}` or `{tostring(key)}`
 			
-			(rule :: any):_validate(value[key], newDc, newPath, newPolicy)
+			(rule :: any):_validate(value[key], newDc, newPath, policy or self.policy)
 
 			result = false
 		end
@@ -157,7 +157,7 @@ function Object:Coerce(value : any) : ({} | {[any] : any})?
 end
 
 function Object:Validate(value : ({} | {[any] : any}))
-	self:_validate(value)
+	self:_validate(value, nil, nil, self.policy)
 end
 
 function Object:IsValid(value : any) : boolean
