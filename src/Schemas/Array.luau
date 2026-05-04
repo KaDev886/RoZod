@@ -27,7 +27,6 @@ function Array.new(arrayType : Any.AnySchema) : ArraySchema
 end
 
 function Array:_validate(value, dc, path, policy)
-	print(path, policy)
 	local newDc = self:_getValidDc(dc)
 
 	if value == nil and self.optional then

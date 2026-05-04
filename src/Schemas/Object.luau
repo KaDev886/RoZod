@@ -43,7 +43,6 @@ function Object.new(shape : {[any] : any}) : ObjectSchema
 end
 
 function Object:_validate(value, dc, path, policy)
-	print(policy)
 	local newDc = self:_getValidDc(dc)
 
 	if value == nil and self.optional then
