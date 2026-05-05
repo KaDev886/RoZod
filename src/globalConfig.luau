@@ -2,8 +2,6 @@ local globalConfig = {}
 
 local defaultConfig = {
     debugName = "RoZod",
-
-    hideFuncs = {},
 }
 
 local currentConfig = nil
