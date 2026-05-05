@@ -20,9 +20,9 @@ function DebugContext.new() : dc
 	return self
 end
 
-function DebugContext:Add(policy : ("Silent" | "Warn" | "Error")?, message : string, path : string?)
+function DebugContext:Add(policy : ("Silent" | "Warn" | "Error"), message : string, path : string?)
 	table.insert(self.messages, {
-		type = policy or "Error",
+		type = policy,
 		message = message,
 		path = path,
 	})

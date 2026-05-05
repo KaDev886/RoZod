@@ -62,7 +62,7 @@ function Object:_validate(value, dc, path, policy)
 	local result = true
 	
 	for key, rule in self.shape do
-		if not (rule :: any):IsValid(value[key]) then
+		if not rule:IsValid(value[key]) then
 			if value[key] == nil then
 				newDc:Add(policy, `Missing required key '{tostring(key)}'`, path)
 			else
@@ -70,8 +70,9 @@ function Object:_validate(value, dc, path, policy)
 			end
 
 			local newPath = path and `{path}.{tostring(key)}` or `{tostring(key)}`
+			local newPolicy = rule.manualPolicy and rule.policy or policy or rule.policy
 			
-			(rule :: any):_validate(value[key], newDc, newPath, policy or self.policy)
+			rule:_validate(value[key], newDc, newPath, newPolicy)
 
 			result = false
 		end

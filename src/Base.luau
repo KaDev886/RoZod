@@ -7,6 +7,8 @@ export type BaseSchema<Self, Coerced> = {
 	expecteds: ({} | { any }),
 	optional: boolean,
 	default: any,
+	manualPolicy: boolean,
+	policy: ("Silent" | "Warn" | "Error"),
 	
 	Silent: (self: Self) -> Self,
 	Warn: (self: Self) -> Self,
@@ -29,6 +31,9 @@ function Base.new<Self, Coerced>() : BaseSchema<Self, Coerced>
 	self.expecteds = {}
 	self.optional = false
 	self.default = nil
+	
+	self.manualPolicy = false
+	self.policy = "Error"
 
 	return self
 end
@@ -89,16 +94,19 @@ function Base:_validate(value, dc, path, policy)
 end
 
 function Base:Silent()
+	self.manualPolicy = true
 	self.policy = "Silent"
 	return self
 end
 
 function Base:Warn()
+	self.manualPolicy = true
 	self.policy = "Warn"
 	return self
 end
 
 function Base:Error()
+	self.manualPolicy = true
 	self.policy = "Error"
 	return self
 end

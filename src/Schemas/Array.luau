@@ -73,8 +73,13 @@ function Array:_validate(value, dc, path, policy)
 	
 	for key, val in value do
 		local newPath = path and `{path}[{tostring(key)}]` or `[{tostring(key)}]`
-		
-		self.arrayType:_validate(val, newDc, newPath, policy or self.policy)
+
+		local newPolicy = self.arrayType.manualPolicy and 
+		                  self.arrayType.policy or 
+						  policy or 
+						  self.arrayType.policy
+						  
+		self.arrayType:_validate(val, newDc, newPath, newPolicy)
 	end
 
 	Base._validate(self, value, newDc, path, policy)
