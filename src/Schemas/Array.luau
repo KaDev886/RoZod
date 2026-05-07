@@ -16,7 +16,7 @@ Array.__index = Array
 
 setmetatable(Array, Base)
 
-function Array.new(arrayType : Any.AnySchema) : ArraySchema
+function Array.new(arrayType : Any.AnySchema?) : ArraySchema
 	local self = setmetatable(Base.new(), Array) :: any
 	
 	self.arrayType = if typeOf(arrayType) == "Schema" then arrayType else Any()
@@ -34,8 +34,9 @@ function Array:_validate(value, dc, path, policy)
 	
 	local newDc = self:_getValidDc(dc)
 	
-	if typeOf(value) ~= "table" then
-		newDc:Add(policy, `Expected array, got '{typeOf(value)}'`, path)
+	if not tableUtils.isArray(value) then
+		local fType = typeOf(value) ~= "table" and typeOf(value) or "dictionary"
+		newDc:Add(policy, `Expected array, got '{fType}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -43,7 +44,7 @@ function Array:_validate(value, dc, path, policy)
 		
 		return
 	end
-	
+
 	if self.minLength and #value < self.minLength then
 		newDc:Add(
 			policy, 
@@ -73,7 +74,7 @@ function Array:_validate(value, dc, path, policy)
 	end
 	
 	for key, val in value do
-		local newPath = path and `{path}[{tostring(key)}]` or `[{tostring(key)}]`
+		local newPath = path and `{path}[{key}]` or `[{key}]`
 
 		local newPolicy = self.arrayType.manualPolicy and 
 		                  self.arrayType.policy or 
@@ -153,33 +154,38 @@ function Array:Coerce(value : any) : ({} | { any })
 	end
 
 	local result = value
-	
-	if typeOf(result) ~= "table" then
+
+	if not tableUtils.isArray(result) then
 		result = toType.Array(result)
+	else
+		result = tableUtils.copyTable(result)
 	end
 
-	if result == nil then
+	if result then
+		for key, val in result do
+			local coerced = self.arrayType:Coerce(val)
+				
+			if coerced == nil then
+				result = nil
+				break
+			end
+				
+			result[key] = coerced
+		end
+	end
+	
+	if result == nil or #result == 0 then
 		return self.default
 	end
-	
-	-- Normalize (':Normalize()' method in the future)
-
-	result = tableUtils.copyTable(value)
 
 	-- I might remove this in the future
-	if self.minLength and #result < (self.minLength :: number) then
+	if self.minLength and #result < self.minLength then
 		result = tableUtils.fillTable(result, self.minLength, self.arrayType:Coerce())
 	end
 	
-	if self.maxLength and #result > (self.maxLength :: number) then
+	if self.maxLength and #result > self.maxLength then
 		result = tableUtils.sliceTable(result, 1, self.maxLength)
 	end
-	
-	for key, val in ipairs(result) do
-		result[key] = self.arrayType:Coerce(val)
-	end
-
-	-- Normalize END
 	
 	return Base.Coerce(self, result)
 end
@@ -193,7 +199,7 @@ function Array:IsValid(value : any) : boolean
 		return true
 	end
 	
-	if typeOf(value) ~= "table" then
+	if not tableUtils.isArray(value) then
 		return false
 	end
 	
@@ -215,7 +221,7 @@ function Array:IsValid(value : any) : boolean
 end
 
 return setmetatable({}, {
-	__call = function(_, arrayType : Any.AnySchema)
+	__call = function(_, arrayType : Any.AnySchema?)
 		return Array.new(arrayType)
 	end
 })

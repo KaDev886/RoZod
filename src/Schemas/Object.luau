@@ -49,9 +49,10 @@ function Object:_validate(value, dc, path, policy)
 
 	local newDc = self:_getValidDc(dc)
 
-	if typeOf(value) ~= "table" then
-		newDc:Add(policy, `Expected a table, got '{typeOf(value)}'`, path)
-		
+	if not tableUtils.isDictionary(value) then
+		local fType = typeOf(value) ~= "table" and typeOf(value) or "array"
+		newDc:Add(policy, `Expected dictionary, got '{fType}'`, path)
+
 		if dc ~= newDc then
 			newDc:Throw()
 		end
@@ -126,34 +127,30 @@ function Object:Coerce(value : any) : ({} | {[any] : any})?
 
 	local result = value
 	
-	if typeOf(result) ~= "table" then
-		result = toType.DistTable(result)
+	if not tableUtils.isDictionary(result) then
+		result = toType.DictTable(result)
+	else
+		result = tableUtils.copyTable(result)
+	end
+
+	if result then
+		for key, rule in self.shape do
+			result[key] = rule:Coerce(result[key])
+		end
 	end
 
 	if result == nil then
 		return self.default
 	end
 
-	-- Normalize (':Normalize()' method in the future)
-
-	result = tableUtils.copyTable(result)
-	
-	local shape = self.shape :: {[any] : any}
-
-	for key, rule in shape do
-		result[key] = rule:Coerce(result[key])
-	end
-
 	if not self.extra then
 		for key in result do
-			if not shape[key] then
+			if not self.shape[key] then
 				result[key] = nil
 			end
 		end
 	end
 
-	-- Normalize END
-	
 	return Base.Coerce(self, result)
 end
 
@@ -166,12 +163,12 @@ function Object:IsValid(value : any) : boolean
 		return true
 	end
 
-	if typeOf(value) ~= "table" then
+	if not tableUtils.isDictionary(value) then
 		return false
 	end
 	
 	for key, rule in self.shape do
-		if not (rule :: any):IsValid(value[key]) then
+		if not rule:IsValid(value[key]) then
 			return false
 		end
 	end
@@ -183,7 +180,7 @@ function Object:IsValid(value : any) : boolean
 			end
 		end
 	end
-	
+
 	return Base.IsValid(self, value)
 end
 

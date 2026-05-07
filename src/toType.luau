@@ -1,9 +1,9 @@
-local typeOf = require(script.Parent.typeOf)
+local tableUtils = require(script.Parent.tableUtils)
 
 local toType = {}
 
 function toType.Vector3(value : any) : Vector3?
-    local to  = typeOf(value)
+    local to  = typeof(value)
 
     if to == "Vector3" then
         return value
@@ -17,8 +17,12 @@ function toType.Vector3(value : any) : Vector3?
         local coords = {}
 
         for s in string.gmatch(value, "([^,]+)") do
-            table.insert(coords, tonumber(s) or 0)
+            table.insert(coords, tonumber(s))
         end
+
+		if #coords == 0 then
+			return nil
+		end
 
         return Vector3.new(coords[1] or 0, coords[2] or 0, coords[3] or 0)
     end
@@ -26,44 +30,68 @@ function toType.Vector3(value : any) : Vector3?
 	return nil
 end
 
-function toType.DistTable(value : any)
-	local to = typeOf(value)
+local function processPair(result, token)
+    local trimmed = token:match("^%s*(.-)%s*$")
+    if trimmed == "" then return end
 
-	if to == "table" then
-		return value
-	end
+    local key, val = trimmed:match("([^=]+)%s*=%s*(.+)")
+    
+    if key and val then
+        result[key:match("^%s*(.-)%s*$")] = val:match("^%s*(.-)%s*$")
+    else
+        table.insert(result, trimmed)
+    end
+end
 
-    if value ~= value or to == "nil" then 
+function toType.DictTable(value: any): { [any]: any }?
+    local to = typeof(value)
+
+    if tableUtils.isDictionary(value) then
+        return value
+    end
+
+    if value ~= value or to == "nil" then
         return {}
     end
-	
-	if to == "string" then
-		local str = value:gsub("^%s*{", ""):gsub("}%s*$", "")
 
-        local result = {}
+    if to == "string" then
+        local str = value:match("^%s*(.-)%s*$")
 
-        for pair in string.gmatch(str, "([^,]+)") do
-            pair = pair:match("^%s*(.-)%s*$")
+        if not (str:sub(1,1) == "{" and str:sub(-1,-1) == "}") then
+            return nil
+        end
         
-            local key, val = pair:match("([^=]+)%s*=%s*(.+)")
-
-            if key and val then
-                key = key:match("^%s*(.-)%s*$")
-                val = val:match("^%s*(.-)%s*$")
-                result[key] = val
-            else
-                table.insert(result, pair)
+        local content = str:sub(2, -2)
+        local result = {}
+        local depth = 0
+        local currentToken = ""
+        
+        for i = 1, #content do
+            local char = content:sub(i, i)
+            
+            if char == "{" then
+                depth += 1
+            elseif char == "}" then
+                depth -= 1
             end
-		end
+            
+            if char == "," and depth == 0 then
+                processPair(result, currentToken)
+                currentToken = ""
+            else
+                currentToken = currentToken .. char
+            end
+        end
+        
+        processPair(result, currentToken)
+        return result
+    end
 
-		return result
-	end
-
-	return nil
+    return nil
 end
 
 function toType.Enum(value : any) : (Enum | EnumItem)?
-    local to = typeOf(value)
+    local to = typeof(value)
 
 	if to == "Enum" or to == "EnumItem" then
 		return value
@@ -101,7 +129,7 @@ function toType.Enum(value : any) : (Enum | EnumItem)?
 end
 
 function toType.CFrame(value : any) : CFrame?
-    local to = typeOf(value)
+    local to = typeof(value)
 	
 	if to == "CFrame" then
 		return value
@@ -118,7 +146,7 @@ function toType.CFrame(value : any) : CFrame?
 	if to == "string" then
 		local vect3 = toType.Vector3(value)
 
-		if typeOf(vect3) == "Vector3" then
+		if typeof(vect3) == "Vector3" then
 			return toType.CFrame(vect3)
 		end
 	end
@@ -127,7 +155,7 @@ function toType.CFrame(value : any) : CFrame?
 end
 
 function toType.Boolean(value : any) : boolean?
-	local to = typeOf(value)
+	local to = typeof(value)
 
 	if to == "boolean" then
 		return value
@@ -149,9 +177,9 @@ function toType.Boolean(value : any) : boolean?
 end
 
 function toType.Array(value : any) : {any}?
-	local to = typeOf(value)
+	local to = typeof(value)
 
-	if to == "table" then
+	if tableUtils.isArray(value) then
 		return value
 	end
 
@@ -160,12 +188,48 @@ function toType.Array(value : any) : {any}?
 	end
 
 	if to == "string" then
+		local str = value:match("^%s*(.-)%s*$")
+
+        if not (str:sub(1,1) == "{" and str:sub(-1,-1) == "}") then
+            return nil
+        end
+
+		local content = str:sub(2, -2)
+
 		local result = {}
 
-		for s in string.gmatch(value, "([^,]+)") do
-			table.insert(result, s:match("^%s*(.-)%s*$"))
-		end
+		local depth = 0
+        local currentToken = ""
 
+		for i = 1, #content do
+            local char = content:sub(i, i)
+            
+            if char == "{" then
+                depth += 1
+            elseif char == "}" then
+                depth -= 1
+            end
+
+            if char == "," and depth == 0 then
+                local trimmed = currentToken:match("^%s*(.-)%s*$")
+                if trimmed ~= "" then
+                    table.insert(result, trimmed)
+                end
+                currentToken = ""
+            else
+                currentToken = currentToken .. char
+            end
+        end
+
+		local lastTrimmed = currentToken:match("^%s*(.-)%s*$")
+        if lastTrimmed ~= "" then
+            table.insert(result, lastTrimmed)
+        end
+
+		if #result == 0 then
+			return nil
+		end
+		
 		return result
 	end
 

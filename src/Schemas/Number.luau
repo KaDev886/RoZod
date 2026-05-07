@@ -155,8 +155,6 @@ function Number:Coerce(value : any) : number
 	if result == nil or result ~= result then
 		return self.default
 	end
-
-	-- Normalize (':Normalize()' method in the future)
 	
 	if result < self.min then
 		result = self.min
@@ -165,8 +163,6 @@ function Number:Coerce(value : any) : number
 	if result > self.max then
 		result = self.max
 	end
-
-	-- Normalize END
 	
 	return Base.Coerce(self, result)
 end

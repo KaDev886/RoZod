@@ -1,10 +1,8 @@
+local typeOf = require(script.Parent.typeOf)
+
 local Utils = {}
 
 function Utils.copyTable(t)
-	if typeof(t) ~= "table" then
-		return {}
-	end
-	
 	local copy = {}
 	
 	for key, value in t do
@@ -19,10 +17,6 @@ function Utils.copyTable(t)
 end
 
 function Utils.fillTable(t, value : number, fillWith : any)
-	if typeof(t) ~= "table" then
-		return {}
-	end
-	
 	local result = Utils.copyTable(t)
 	
 	for i = 1, value - #t do
@@ -33,10 +27,6 @@ function Utils.fillTable(t, value : number, fillWith : any)
 end
 
 function Utils.sliceTable(t, i : number, j : number)
-	if typeof(t) ~= "table" then
-		return {}
-	end
-	
 	local result = {}
 	local counter = 0
 	
@@ -49,6 +39,36 @@ function Utils.sliceTable(t, i : number, j : number)
 	end
 	
 	return result
+end
+
+function Utils.isArray(t)
+	if typeOf(t) ~= "table" then
+		return false
+	end
+
+	local count = 0
+
+	for key in t do
+		if typeOf(key) ~= "number" then
+			return false
+		end
+		
+		count += 1
+	end
+
+	return count == #t
+end
+
+function Utils.isDictionary(t)
+	if typeOf(t) ~= "table" then
+		return false
+	end
+
+	if #t == 0 then
+		return true
+	end
+
+	return not Utils.isArray(t)
 end
 
 return Utils
