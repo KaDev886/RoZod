@@ -5,7 +5,7 @@ export type dc = {
 	messages: {any},
 	
 	new: () -> dc,
-	Add: (self: dc, policy: ("Silent" | "Warn" | "Error")?, message: string, path: string?) -> (),
+	Add: (self: dc, policy: ("Silent" | "Warn" | "Error"), message: string, path: string?) -> (),
 	Throw: (self: dc) -> (),
 }
 
@@ -21,6 +21,8 @@ function DebugContext.new() : dc
 end
 
 function DebugContext:Add(policy : ("Silent" | "Warn" | "Error"), message : string, path : string?)
+	if policy == "Silent" then return end
+
 	table.insert(self.messages, {
 		type = policy,
 		message = message,

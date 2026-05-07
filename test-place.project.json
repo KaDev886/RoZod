@@ -6,17 +6,9 @@
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
 
-      "RoZod": {
-        "$path": "src"
-      },
-
-      "Tests": {
-        "$path": "tests"
-      },
-
-      "DevPackages": {
-        "$path": "DevPackages"
-      }
+      "RoZod": { "$path": "src" },
+      "DevPackages": { "$path": "DevPackages" },
+      "Tests": { "$path": "tests" }
     }
   }
 }

@@ -9,7 +9,7 @@ function toType.Vector3(value : any) : Vector3?
         return value
     end
 
-    if to == "NaN" or to == "nil" then 
+	if value ~= value or to == "nil" then 
         return nil
     end
 
@@ -33,7 +33,7 @@ function toType.DistTable(value : any)
 		return value
 	end
 
-    if to == "NaN" or to == "nil" then 
+    if value ~= value or to == "nil" then 
         return {}
     end
 	
@@ -69,7 +69,7 @@ function toType.Enum(value : any) : (Enum | EnumItem)?
 		return value
 	end
 
-    if to == "NaN" or to == "nil" then 
+    if value ~= value or to == "nil" then 
         return nil
     end
 
@@ -107,7 +107,7 @@ function toType.CFrame(value : any) : CFrame?
 		return value
 	end
 
-    if to == "NaN" or to == "nil" then 
+    if value ~= value or to == "nil" then 
         return nil
     end
 
@@ -133,7 +133,7 @@ function toType.Boolean(value : any) : boolean?
 		return value
 	end
 
-	if to == "NaN" or to == "nil" then
+	if value ~= value or to == "nil" then
 		return nil
 	end
 
@@ -155,7 +155,7 @@ function toType.Array(value : any) : {any}?
 		return value
 	end
 
-	if to == "NaN" or to == "nil" then
+	if value ~= value or to == "nil" then
 		return nil
 	end
 

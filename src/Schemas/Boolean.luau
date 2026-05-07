@@ -16,11 +16,11 @@ function Boolean.new() : BooleanSchema
 end
 
 function Boolean:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-
 	if value == nil and self.optional then
 		return
 	end
+	
+	local newDc = self:_getValidDc(dc)
 	
 	if typeOf(value) ~= "boolean" then
 		newDc:Add(policy, `Expected boolean, got '{typeOf(value)}'`, path)
@@ -40,11 +40,10 @@ function Boolean:_validate(value, dc, path, policy)
 end
 
 function Boolean:Coerce(value : any) : boolean
-	if self:IsValid(value) then
-		return value
-	end
-	
-	if self.default ~= nil then
+	if value == nil then
+		if self.optional then
+			return nil
+		end
 		return self.default
 	end
 
@@ -52,10 +51,10 @@ function Boolean:Coerce(value : any) : boolean
 	
 	if typeOf(result) ~= "boolean" then
 		result = toType.Boolean(result)
-
-		if result == nil then
-			return nil
-		end
+	end
+	
+	if result == nil then
+		return self.default
 	end
 	
 	return Base.Coerce(self, result)

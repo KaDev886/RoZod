@@ -29,7 +29,7 @@ function Object.new(shape : {[any] : any}) : ObjectSchema
 			newDc:Add("Error", `Shape container a number keys`)
 			newDc:Throw()
 		end
-
+		
 		if typeOf(value) ~= "Schema" then
 			newDc:Add("Error", `Expected a schema for value, got '{typeOf(value)}'`, key)
 			newDc:Throw()
@@ -43,11 +43,11 @@ function Object.new(shape : {[any] : any}) : ObjectSchema
 end
 
 function Object:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-
 	if value == nil and self.optional then
 		return
 	end
+
+	local newDc = self:_getValidDc(dc)
 
 	if typeOf(value) ~= "table" then
 		newDc:Add(policy, `Expected a table, got '{typeOf(value)}'`, path)
@@ -117,23 +117,24 @@ function Object:Extra() : ObjectSchema
 end
 
 function Object:Coerce(value : any) : ({} | {[any] : any})?
-	if self:IsValid(value) then
-		return value
-	end
-
-	if self.default ~= nil then
+	if value == nil then
+		if self.optional then
+			return nil
+		end
 		return self.default
 	end
-	
+
 	local result = value
 	
 	if typeOf(result) ~= "table" then
 		result = toType.DistTable(result)
-
-		if result == nil then
-			return nil
-		end
 	end
+
+	if result == nil then
+		return self.default
+	end
+
+	-- Normalize (':Normalize()' method in the future)
 
 	result = tableUtils.copyTable(result)
 	
@@ -144,14 +145,14 @@ function Object:Coerce(value : any) : ({} | {[any] : any})?
 	end
 
 	if not self.extra then
-		for key, _ in result do
-			if shape[key] then
-				continue
+		for key in result do
+			if not shape[key] then
+				result[key] = nil
 			end
-			
-			result[key] = nil
 		end
 	end
+
+	-- Normalize END
 	
 	return Base.Coerce(self, result)
 end

@@ -15,22 +15,22 @@ function Any.new() : AnySchema
 end
 
 function Any:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-
 	if value == nil and self.optional then
 		return
 	end
-	
-	if typeOf(value) == "NaN" then
-		newDc:Add(policy, "Expected valid value, got NaN", path)
+
+	local newDc = self:_getValidDc(dc)
+
+	if value == nil then
+		newDc:Add(policy, "Expected valid value, got nil", path)
 
 		if dc ~= newDc then
 			newDc:Throw()
 		end
 	end
-
-	if value == nil then
-		newDc:Add(policy, "Expected valid value, got nil", path)
+	
+	if value ~= value then
+		newDc:Add(policy, "Expected valid value, got NaN", path)
 
 		if dc ~= newDc then
 			newDc:Throw()
@@ -45,11 +45,14 @@ function Any:_validate(value, dc, path, policy)
 end
 
 function Any:Coerce(value: any) : any
-	if self:IsValid(value) then
-		return value
+	if value == nil then
+		if self.optional then
+			return nil
+		end
+		return self.default
 	end
 
-	if self.default ~= nil then
+	if value ~= value then
 		return self.default
 	end
 
@@ -69,7 +72,7 @@ function Any:IsValid(value : any) : boolean
 		return false
 	end
 
-	if typeOf(value) == "NaN" then
+	if value ~= value then
 		return false
 	end
 

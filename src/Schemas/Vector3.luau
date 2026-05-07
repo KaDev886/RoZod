@@ -16,15 +16,25 @@ function Vector3M.new() : Vector3Schema
 end
 
 function Vector3M:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-	
 	if value == nil and self.optional then
 		return
 	end
 
+	local newDc = self:_getValidDc(dc)
+
 	if typeOf(value) ~= "Vector3" then
 		newDc:Add(policy, `Expected Vector3, got '{typeOf(value)}'`, path)
 		
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+		
+		return
+	end
+
+	if value ~= value then
+		newDc:Add(policy, "Expected valid Vector3, got NaN", path)
+
 		if dc ~= newDc then
 			newDc:Throw()
 		end
@@ -40,22 +50,21 @@ function Vector3M:_validate(value, dc, path, policy)
 end
 
 function Vector3M:Coerce(value : any) : Vector3?
-	if self:IsValid(value) then
-		return value
-	end
-
-	if self.default ~= nil then
-		return self.default
-	end
-	
-	local result = value
-
-	if typeOf(result) ~= "Vector3" then
-		result = toType.Vector3(result)
-
-		if result == nil then
+	if value == nil then
+		if self.optional then
 			return nil
 		end
+		return self.default
+	end
+
+	local result = value
+	
+	if typeOf(result) ~= "Vector3" then
+		result = toType.Vector3(result)
+	end
+	
+	if result == nil or result ~= result then
+		return self.default
 	end
 	
 	return Base.Coerce(self, result)
@@ -71,6 +80,10 @@ function Vector3M:IsValid(value : any) : boolean
 	end
 
 	if typeOf(value) ~= "Vector3" then
+		return false
+	end
+
+	if value ~= value then
 		return false
 	end
 	

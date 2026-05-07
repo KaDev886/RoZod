@@ -16,8 +16,6 @@ setmetatable(String, Base)
 function String.new() : StringSchema
 	local self = setmetatable(Base.new(), String) :: any
 	
-	self.type = script.Name
-	
 	self.minLength = 0
 	self.maxLength = math.huge
 	
@@ -25,11 +23,11 @@ function String.new() : StringSchema
 end
 
 function String:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-
 	if value == nil and self.optional then
 		return
 	end
+
+	local newDc = self:_getValidDc(dc)
 
 	if typeOf(value) ~= "string" then
 		newDc:Add(policy, `Expected string, got '{typeOf(value)}'`, path)
@@ -84,6 +82,11 @@ function String:MinLength(minLength : number) : StringSchema
 		newDc:Throw()
 	end
 
+	if minLength ~= minLength then
+		newDc:Add("Error", `minLength cannot be NaN`)
+		newDc:Throw()
+	end
+
 	if minLength == math.huge then
 		newDc:Add("Error", `minLength cannot be infinity`)
 		newDc:Throw()
@@ -111,6 +114,11 @@ function String:MaxLength(maxLength : number) : StringSchema
 		newDc:Throw()
 	end
 
+	if maxLength ~= maxLength then
+		newDc:Add("Error", `maxLength cannot be NaN`)
+		newDc:Throw()
+	end
+
 	if maxLength < 0 then
 		newDc:Add("Error", `maxLength cannot be negative`)
 		newDc:Throw()
@@ -131,11 +139,10 @@ function String:MaxLength(maxLength : number) : StringSchema
 end
 
 function String:Coerce(value : any) : string?
-	if self:IsValid(value) then
-		return value
-	end
-
-	if self.default ~= nil then
+	if value == nil then
+		if self.optional then
+			return nil
+		end
 		return self.default
 	end
 	
@@ -143,18 +150,10 @@ function String:Coerce(value : any) : string?
 	
 	if typeOf(result) ~= "string" then
 		result = tostring(result)
+	end
 
-		if result == nil then
-			return nil	
-		end
-	end
-	
-	if #result < self.minLength then
-		result = result .. string.rep(" ", self.minLength-#result)
-	end
-	
-	if #result > self.maxLength then
-		result = string.sub(result, 1, self.maxLength)
+	if result == nil then
+		return self.default
 	end
 	
 	return Base.Coerce(self, result)

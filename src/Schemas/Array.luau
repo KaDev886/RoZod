@@ -20,6 +20,7 @@ function Array.new(arrayType : Any.AnySchema) : ArraySchema
 	local self = setmetatable(Base.new(), Array) :: any
 	
 	self.arrayType = if typeOf(arrayType) == "Schema" then arrayType else Any()
+
 	self.minLength = nil
 	self.maxLength = nil
 	
@@ -27,11 +28,11 @@ function Array.new(arrayType : Any.AnySchema) : ArraySchema
 end
 
 function Array:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-
 	if value == nil and self.optional then
 		return
 	end
+	
+	local newDc = self:_getValidDc(dc)
 	
 	if typeOf(value) ~= "table" then
 		newDc:Add(policy, `Expected array, got '{typeOf(value)}'`, path)
@@ -144,11 +145,10 @@ function Array:MaxLength(maxLength : number) : ArraySchema
 end
 
 function Array:Coerce(value : any) : ({} | { any })
-	if self:IsValid(value) then
-		return value
-	end
-	
-	if self.default ~= nil then
+	if value == nil then
+		if self.optional then
+			return nil
+		end
 		return self.default
 	end
 
@@ -156,14 +156,17 @@ function Array:Coerce(value : any) : ({} | { any })
 	
 	if typeOf(result) ~= "table" then
 		result = toType.Array(result)
+	end
 
-		if result == nil then
-			return nil
-		end
+	if result == nil then
+		return self.default
 	end
 	
+	-- Normalize (':Normalize()' method in the future)
+
 	result = tableUtils.copyTable(value)
-	
+
+	-- I might remove this in the future
 	if self.minLength and #result < (self.minLength :: number) then
 		result = tableUtils.fillTable(result, self.minLength, self.arrayType:Coerce())
 	end
@@ -175,6 +178,8 @@ function Array:Coerce(value : any) : ({} | { any })
 	for key, val in ipairs(result) do
 		result[key] = self.arrayType:Coerce(val)
 	end
+
+	-- Normalize END
 	
 	return Base.Coerce(self, result)
 end

@@ -23,15 +23,25 @@ function Number.new() : NumberSchema
 end
 
 function Number:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-
 	if value == nil and self.optional then
 		return
 	end
 
+	local newDc = self:_getValidDc(dc)
+
 	if typeOf(value) ~= "number" then
 		newDc:Add(policy, `Expected number, got '{typeOf(value)}'`, path)
 		
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+		
+		return
+	end
+
+	if value ~= value then
+		newDc:Add(policy, "Expected valid number, got NaN", path)
+
 		if dc ~= newDc then
 			newDc:Throw()
 		end
@@ -82,6 +92,11 @@ function Number:Min(minValue : number) : NumberSchema
 		newDc:Throw()
 	end
 
+	if minValue ~= minValue then
+		newDc:Add("Error", `min cannot be NaN`)
+		newDc:Throw()
+	end
+
 	if minValue > self.max then
 		newDc:Add(
 			"Error", 
@@ -104,6 +119,11 @@ function Number:Max(maxValue : number) : NumberSchema
 		newDc:Throw()
 	end
 
+	if maxValue ~= maxValue then
+		newDc:Add("Error", `max cannot be NaN`)
+		newDc:Throw()
+	end
+
 	if maxValue < self.min then
 		newDc:Add(
 			"Error", 
@@ -119,23 +139,24 @@ function Number:Max(maxValue : number) : NumberSchema
 end
 
 function Number:Coerce(value : any) : number
-	if self:IsValid(value) then
-		return value
-	end
-
-	if self.default ~= nil then
+	if value == nil then
+		if self.optional then
+			return nil
+		end
 		return self.default
 	end
-	
-	local result = value
+
+    local result = value
 	
 	if typeOf(result) ~= "number" then
 		result = tonumber(result)
-
-		if result == nil then
-			return nil
-		end
 	end
+
+	if result == nil or result ~= result then
+		return self.default
+	end
+
+	-- Normalize (':Normalize()' method in the future)
 	
 	if result < self.min then
 		result = self.min
@@ -144,6 +165,8 @@ function Number:Coerce(value : any) : number
 	if result > self.max then
 		result = self.max
 	end
+
+	-- Normalize END
 	
 	return Base.Coerce(self, result)
 end
@@ -158,6 +181,10 @@ function Number:IsValid(value : any) : boolean
 	end
 	
 	if typeOf(value) ~= "number" then
+		return false
+	end
+
+	if value ~= value then
 		return false
 	end
 	

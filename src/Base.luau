@@ -64,11 +64,11 @@ function Base:_validateDefault()
 end
 
 function Base:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-
 	if value == nil and self.optional then 
 		return
 	end
+	
+	local newDc = self:_getValidDc(dc)
 	
 	if #self.expecteds ~= 0 and not table.find(self.expecteds, value) then
 		local validExpecteds = {}
@@ -153,17 +153,11 @@ function Base:Optional()
 end
 
 function Base:Coerce(value : any)
-	if self:IsValid(value) then
-		return value
-	end
-
-	if self.default ~= nil then
+	if #self.expecteds ~= 0 and not table.find(self.expecteds, value) then
 		return self.default
 	end
 	
-	if #self.expecteds ~= 0 and not table.find(self.expecteds, value) then
-		return nil
-	end
+	return value
 end
 
 function Base:Validate(value : any)

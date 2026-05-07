@@ -21,11 +21,11 @@ function EnumM.new() : EnumSchema
 end
 
 function EnumM:_validate(value, dc, path, policy)
-	local newDc = self:_getValidDc(dc)
-
 	if value == nil and self.optional then
 		return
 	end
+
+	local newDc = self:_getValidDc(dc)
 
 	if not isValidType(value) then
 		newDc:Add(policy, `Expected Enum or EnumItem, got '{typeOf(value)}'`, path)
@@ -44,12 +44,11 @@ function EnumM:_validate(value, dc, path, policy)
 	end
 end
 
-function EnumM:Coerce(value : any) : (Enum | EnumItem)
-	if self:IsValid(value) then
-		return value
-	end
-
-	if self.default ~= nil then
+function EnumM:Coerce(value : any) : (Enum | EnumItem)?
+	if value == nil then
+		if self.optional then
+			return nil
+		end
 		return self.default
 	end
 
@@ -57,10 +56,10 @@ function EnumM:Coerce(value : any) : (Enum | EnumItem)
 	
 	if not isValidType(result) then
 		result = toType.Enum(result)
+	end
 
-		if result == nil then
-			return nil
-		end
+	if result == nil then
+		return self.default
 	end
 	
 	return Base.Coerce(self, result)
