@@ -47,7 +47,7 @@ local RoZod = require(path.to.RoZod)
 Add to `wally.toml`:
 
 ```toml
-RoZod = "kadev886/rozod@v2.0.0"
+RoZod = "kadev886/rozod@2.0.0"
 ```
 
 Install:
@@ -86,8 +86,8 @@ local itemsName = {"Wood", "Sword", "Helmet"}
 local itemsTypes = {"Resource", "Weapon", "Armor"}
 
 local itemSchema = RoZod.Object({
-    Name = RoZod.String():Expected(itemsName),
-    Type = RoZod.String():Expected(itemsTypes),
+    Name = RoZod.String():OneOf(itemsName),
+    Type = RoZod.String():OneOf(itemsTypes),
     Amount = RoZod.Number():Min(1),
 })
 
