@@ -2,11 +2,13 @@
 local globalConfig = require(script.Parent.globalConfig)
 
 export type dc = {
+	hasMessages: boolean,
 	messages: {any},
 	
 	new: () -> dc,
-	Add: (self: dc, policy: ("Silent" | "Warn" | "Error"), message: string, path: string?) -> (),
+	Add: (self: dc, policy: ("Warn" | "Error"), message: string, path: string?) -> (),
 	Throw: (self: dc) -> (),
+	HasMessages: (self: dc) -> boolean
 }
 
 local DebugContext = {}
@@ -20,9 +22,7 @@ function DebugContext.new() : dc
 	return self
 end
 
-function DebugContext:Add(policy : ("Silent" | "Warn" | "Error"), message : string, path : string?)
-	if policy == "Silent" then return end
-
+function DebugContext:Add(policy : ("Warn" | "Error"), message : string, path : string?)
 	table.insert(self.messages, {
 		type = policy,
 		message = message,
@@ -59,6 +59,10 @@ function DebugContext:Throw()
 	if errorMsg ~= "" then
 		error(errorMsg, 0)
 	end
+end
+
+function DebugContext:HasMessages()
+	return #self.messages > 0
 end
 
 return DebugContext

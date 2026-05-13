@@ -1,5 +1,6 @@
 --!strict
 
+local getValidDc = require(script.Parent.Parent.getValidDc)
 local typeOf = require(script.Parent.Parent.typeOf)
 local toType = require(script.Parent.Parent.toType)
 local tableUtils = require(script.Parent.Parent.tableUtils)
@@ -27,21 +28,87 @@ function Array.new(arrayType : Any.AnySchema?) : ArraySchema
 	return self
 end
 
+function Array:_matchesType(value : any) : boolean
+	return tableUtils.isArray(value)
+end
+
+function Array:_matchesRules(value : any) : boolean
+	if self.minLength and #value < self.minLength then
+		return false
+	end
+	
+	if self.maxLength and #value > self.maxLength then
+		return false
+	end
+	
+	for _, val in value do
+		if not self.arrayType:IsValid(val) then
+			return false
+		end
+	end
+
+	return true
+end
+
 function Array:_validate(value, dc, path, policy)
+	if policy == "Silent" then return end
+
+	local newDc = getValidDc(dc)
+
+	local oneOfSet = self.oneOfSet
+
 	if value == nil and self.optional then
 		return
 	end
 	
-	local newDc = self:_getValidDc(dc)
+	if oneOfSet and not oneOfSet[value] then
+		newDc:Add(
+			policy, 
+			`Expected one of: {table.concat(self.oneOf, " | ")} got '{value}'`,
+			path
+		)
+		
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+
+		return
+	end
+
+	local to = typeOf(value)
 	
-	if not tableUtils.isArray(value) then
-		local fType = typeOf(value) ~= "table" and typeOf(value) or "dictionary"
-		newDc:Add(policy, `Expected array, got '{fType}'`, path)
+	if to ~= "table" then
+		newDc:Add(policy, `Expected table, got '{to}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
 		end
 		
+		return
+	end
+
+	local i = 0
+
+	for key, val in value do
+		i += 1
+
+		if key ~= i then
+			newDc:Add(policy, "table don't is array", path)
+			return
+		end
+
+		local newPath = path and `{path}[{key}]` or `[{key}]`
+
+		local newPolicy = self.arrayType.manualPolicy and 
+		                  self.arrayType.policy or 
+						  policy or 
+						  self.arrayType.policy
+						  
+		self.arrayType:_validate(val, newDc, newPath, newPolicy)
+	end
+
+	if dc ~= newDc and newDc:HasMessages() then
+		newDc:Throw()
 		return
 	end
 
@@ -69,30 +136,11 @@ function Array:_validate(value, dc, path, policy)
 		if dc ~= newDc then
 			newDc:Throw()
 		end
-		
-		return
-	end
-	
-	for key, val in value do
-		local newPath = path and `{path}[{key}]` or `[{key}]`
-
-		local newPolicy = self.arrayType.manualPolicy and 
-		                  self.arrayType.policy or 
-						  policy or 
-						  self.arrayType.policy
-						  
-		self.arrayType:_validate(val, newDc, newPath, newPolicy)
-	end
-
-	Base._validate(self, value, newDc, path, policy)
-
-	if dc ~= newDc then
-		newDc:Throw()
 	end
 end
 
 function Array:MinLength(minLength : number) : ArraySchema
-	local newDc = self:_getValidDc()
+	local newDc = getValidDc()
 
 	if typeOf(minLength) ~= "number" then
 		newDc:Add("Error", `Expected number for minLength, got '{typeOf(minLength)}'`)
@@ -113,13 +161,13 @@ function Array:MinLength(minLength : number) : ArraySchema
 	end
 
 	self.minLength = minLength
-	self:_validateDefault()
+	self:_validateSchema()
 	
 	return self
 end
 
 function Array:MaxLength(maxLength : number) : ArraySchema
-	local newDc = self:_getValidDc()
+	local newDc = getValidDc()
 
 	if typeOf(maxLength) ~= "number" then
 		newDc:Add("Error", `Expected number for maxLength, got '{typeOf(maxLength)}'`)
@@ -140,20 +188,26 @@ function Array:MaxLength(maxLength : number) : ArraySchema
 	end
 	
 	self.maxLength = maxLength
-	self:_validateDefault()
+	self:_validateSchema()
 
 	return self
 end
 
-function Array:Coerce(value : any) : ({} | { any })
+function Array:Coerce(value : any) : ({} | { any })?
+	local oneOfSet = self.oneOfSet
+	
+	local result = value
+
 	if value == nil then
 		if self.optional then
 			return nil
 		end
 		return self.default
 	end
-
-	local result = value
+	
+	if oneOfSet and not oneOfSet[value] then
+		return self.default
+	end
 
 	if not tableUtils.isArray(result) then
 		result = toType.Array(result)
@@ -187,22 +241,40 @@ function Array:Coerce(value : any) : ({} | { any })
 		result = tableUtils.sliceTable(result, 1, self.maxLength)
 	end
 	
-	return Base.Coerce(self, result)
+	return result
 end
 
 function Array:Validate(value : any)
 	self:_validate(value, nil, nil, self.policy)
 end
 
-function Array:IsValid(value : any) : boolean
-	if value == nil and self.optional then
+function Array:IsValid(value : any)
+	local oneOfSet = self.oneOfSet
+
+	if value == nil and self.optional then 
 		return true
 	end
-	
-	if not tableUtils.isArray(value) then
+
+	if oneOfSet and not oneOfSet[value] then
+		return false
+	end
+
+	if typeOf(value) ~= "table" then
 		return false
 	end
 	
+	local i = 0
+	
+	for k, val in value do
+		i += 1
+		if k ~= i then
+			return false
+		end
+		if not self.arrayType:IsValid(val) then
+			return false
+		end
+	end
+
 	if self.minLength and #value < self.minLength then
 		return false
 	end
@@ -210,14 +282,8 @@ function Array:IsValid(value : any) : boolean
 	if self.maxLength and #value > self.maxLength then
 		return false
 	end
-	
-	for _, val in value do
-		if not self.arrayType:IsValid(val) then
-			return false
-		end
-	end
-	
-	return Base.IsValid(self, value)
+
+	return true
 end
 
 return setmetatable({}, {

@@ -1,5 +1,6 @@
 --!strict
 
+local getValidDc = require(script.Parent.Parent.getValidDc)
 local typeOf = require(script.Parent.Parent.typeOf)
 local Base = require(script.Parent.Parent.Base)
 
@@ -22,15 +23,57 @@ function Number.new() : NumberSchema
 	return self
 end
 
+function Number:_matchesType(value : any) : boolean
+	return typeOf(value) == "number"
+end
+
+function Number:_matchesRules(value : any): boolean
+	if value ~= value then
+		return false
+	end
+	
+	if value < self.min then
+		return false
+	end
+	
+	if value > self.max then
+		return false
+	end
+
+	return true
+end
+
 function Number:_validate(value, dc, path, policy)
+	if policy == "Silent" then return end
+	
+	local newDc = getValidDc(dc)
+
+	local oneOfSet = self.oneOfSet
+	local min = self.min
+	local max = self.max
+
 	if value == nil and self.optional then
 		return
 	end
+	
+	if oneOfSet and not oneOfSet[value] then
+		newDc:Add(
+			policy, 
+			`Expected one of: {table.concat(self.oneOf, " | ")} got '{value}'`,
+			path
+		)
+		
+		if dc ~= newDc then
+			newDc:Throw()
+		end
 
-	local newDc = self:_getValidDc(dc)
+		return
+	end
 
-	if typeOf(value) ~= "number" then
-		newDc:Add(policy, `Expected number, got '{typeOf(value)}'`, path)
+	local to = typeOf(value)
+
+	if to ~= "number" then
+		newDc:Add(policy, `Expected number, got '{to}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -49,10 +92,10 @@ function Number:_validate(value, dc, path, policy)
 		return
 	end
 	
-	if value < self.min then
+	if value < min then
 		newDc:Add(
 			policy, 
-			`Number is too small. Expected at least {self.min}, got {value}`, 
+			`Number is too small. Expected at least {min}, got {value}`, 
 			path
 		)
 		
@@ -63,10 +106,10 @@ function Number:_validate(value, dc, path, policy)
 		return
 	end
 	
-	if value > self.max then
+	if value > max then
 		newDc:Add(
 			policy, 
-			`Number is too large. Expected at most {self.max}, got {value}`, 
+			`Number is too large. Expected at most {max}, got {value}`, 
 			path
 		)
 		
@@ -75,17 +118,11 @@ function Number:_validate(value, dc, path, policy)
 		end
 		
 		return
-	end
-	
-	Base._validate(self, value, newDc, path, policy)
-
-	if dc ~= newDc then
-		newDc:Throw()
 	end
 end
 
 function Number:Min(minValue : number) : NumberSchema
-	local newDc = self:_getValidDc()
+	local newDc = getValidDc()
 
 	if typeOf(minValue) ~= "number" then
 		newDc:Add("Error", `Expected number for min, got '{typeOf(minValue)}'`)
@@ -106,13 +143,13 @@ function Number:Min(minValue : number) : NumberSchema
 	end
 	
 	self.min = minValue
-	self:_validateDefault()
+	self:_validateSchema()
 	
 	return self
 end
 
 function Number:Max(maxValue : number) : NumberSchema
-	local newDc = self:_getValidDc()
+	local newDc = getValidDc()
 
 	if typeOf(maxValue) ~= "number" then
 		newDc:Add("Error", `Expected number for max, got '{typeOf(maxValue)}'`)
@@ -133,21 +170,29 @@ function Number:Max(maxValue : number) : NumberSchema
 	end
 
 	self.max = maxValue
-	self:_validateDefault()
+	self:_validateSchema()
 
 	return self
 end
 
-function Number:Coerce(value : any) : number
+function Number:Coerce(value : any) : number?
+	local oneOfSet = self.oneOfSet
+	local min = self.min
+	local max = self.max
+
+	local result = value
+
 	if value == nil then
 		if self.optional then
 			return nil
 		end
 		return self.default
 	end
-
-    local result = value
 	
+	if oneOfSet and not oneOfSet[value] then
+		return self.default
+	end
+
 	if typeOf(result) ~= "number" then
 		result = tonumber(result)
 	end
@@ -156,26 +201,32 @@ function Number:Coerce(value : any) : number
 		return self.default
 	end
 	
-	if result < self.min then
-		result = self.min
+	if result < min then
+		result = min
 	end
 	
-	if result > self.max then
-		result = self.max
+	if result > max then
+		result = max
 	end
 	
-	return Base.Coerce(self, result)
+	return result
 end
 
 function Number:Validate(value : any)
 	self:_validate(value, nil, nil, self.policy)
 end
 
-function Number:IsValid(value : any) : boolean
-	if value == nil and self.optional then
+function Number:IsValid(value : any)
+	local oneOfSet = self.oneOfSet
+	
+	if value == nil and self.optional then 
 		return true
 	end
-	
+
+	if oneOfSet and not oneOfSet[value] then
+		return false
+	end
+
 	if typeOf(value) ~= "number" then
 		return false
 	end
@@ -192,7 +243,7 @@ function Number:IsValid(value : any) : boolean
 		return false
 	end
 	
-	return Base.IsValid(self, value)
+	return true
 end
 
 return setmetatable({}, {

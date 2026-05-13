@@ -1,5 +1,6 @@
 --!strict
 
+local getValidDc = require(script.Parent.Parent.getValidDc)
 local typeOf = require(script.Parent.Parent.typeOf)
 local Base = require(script.Parent.Parent.Base)
 
@@ -22,15 +23,51 @@ function String.new() : StringSchema
 	return self
 end
 
+function String:_matchesType(value : any) : boolean
+	return typeOf(value) == "string"
+end
+
+function String:_matchesRules(value : any) : boolean
+	if #value < self.minLength then
+		return false
+	end
+	
+	if #value > self.maxLength then
+		return false
+	end
+
+	return true
+end
+
 function String:_validate(value, dc, path, policy)
+	if policy == "Silent" then return end
+
+	local newDc = getValidDc(dc)
+
+	local oneOfSet = self.oneOfSet
+
 	if value == nil and self.optional then
 		return
 	end
+	
+	if oneOfSet and not oneOfSet[value] then
+		newDc:Add(
+			policy, 
+			`Expected one of: {table.concat(self.oneOf, " | ")} got '{value}'`,
+			path
+		)
+				
+		if dc ~= newDc then
+			newDc:Throw()
+		end
 
-	local newDc = self:_getValidDc(dc)
+		return
+	end
 
-	if typeOf(value) ~= "string" then
-		newDc:Add(policy, `Expected string, got '{typeOf(value)}'`, path)
+	local to = typeOf(value)
+	
+	if to ~= "string" then
+		newDc:Add(policy, `Expected string, got '{to}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -66,16 +103,10 @@ function String:_validate(value, dc, path, policy)
 		
 		return
 	end
-	
-	Base._validate(self, value, newDc, path, policy)
-
-	if dc ~= newDc then
-		newDc:Throw()
-	end
 end
 
 function String:MinLength(minLength : number) : StringSchema
-	local newDc = self:_getValidDc()
+	local newDc = getValidDc()
 
 	if typeOf(minLength) ~= "number" then
 		newDc:Add("Error", `Expected number for minLength, got '{typeOf(minLength)}'`)
@@ -101,13 +132,13 @@ function String:MinLength(minLength : number) : StringSchema
 	end
 
 	self.minLength = minLength
-	self:_validateDefault()
+	self:_validateSchema()
 	
 	return self
 end
 
 function String:MaxLength(maxLength : number) : StringSchema
-	local newDc = self:_getValidDc()
+	local newDc = getValidDc()
 
 	if typeOf(maxLength) ~= "number" then
 		newDc:Add("Error", `Expected number for maxLength, got '{typeOf(maxLength)}'`)
@@ -133,12 +164,16 @@ function String:MaxLength(maxLength : number) : StringSchema
 	end
 
 	self.maxLength = maxLength
-	self:_validateDefault()
+	self:_validateSchema()
 
 	return self
 end
 
 function String:Coerce(value : any) : string?
+	local oneOfSet = self.oneOfSet
+	
+	local result = value
+
 	if value == nil then
 		if self.optional then
 			return nil
@@ -146,8 +181,10 @@ function String:Coerce(value : any) : string?
 		return self.default
 	end
 	
-	local result = value
-	
+	if oneOfSet and not oneOfSet[value] then
+		return self.default
+	end
+
 	if typeOf(result) ~= "string" then
 		result = tostring(result)
 	end
@@ -156,22 +193,28 @@ function String:Coerce(value : any) : string?
 		return self.default
 	end
 	
-	return Base.Coerce(self, result)
+	return result
 end
 
 function String:Validate(value : any)
 	self:_validate(value, nil, nil, self.policy)
 end
 
-function String:IsValid(value : any) : boolean
-	if value == nil and self.optional then
+function String:IsValid(value : any)
+	local oneOfSet = self.oneOfSet
+
+	if value == nil and self.optional then 
 		return true
 	end
-	
+
+	if oneOfSet and not oneOfSet[value] then
+		return false
+	end
+
 	if typeOf(value) ~= "string" then
 		return false
 	end
-	
+
 	if #value < self.minLength then
 		return false
 	end
@@ -179,8 +222,8 @@ function String:IsValid(value : any) : boolean
 	if #value > self.maxLength then
 		return false
 	end
-	
-	return Base.IsValid(self, value)
+
+	return true
 end
 
 return setmetatable({}, {

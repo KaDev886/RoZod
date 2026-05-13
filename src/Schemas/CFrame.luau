@@ -1,5 +1,6 @@
 --!strict
 
+local getValidDc = require(script.Parent.Parent.getValidDc)
 local typeOf = require(script.Parent.Parent.typeOf)
 local toType = require(script.Parent.Parent.toType)
 local Base = require(script.Parent.Parent.Base)
@@ -15,15 +16,39 @@ function CFrameM.new() : CFrameSchema
 	return setmetatable(Base.new(), CFrameM) :: any
 end
 
+function CFrameM:_matchesType(value : any) : boolean
+	return typeOf(value) == "CFrame"
+end
+
 function CFrameM:_validate(value, dc, path, policy)
+	if policy == "Silent" then return end
+
+	local newDc = getValidDc(dc)
+	
+	local oneOfSet = self.oneOfSet
+
 	if value == nil and self.optional then
 		return
 	end
 	
-	local newDc = self:_getValidDc(dc)
-	
-	if typeOf(value) ~= "CFrame" then
-		newDc:Add(policy, `Expected CFrame, got '{typeOf(value)}'`, path)
+	if oneOfSet and not oneOfSet[value] then
+		newDc:Add(
+			policy, 
+			`Expected one of: {table.concat(self.oneOf, " | ")} got '{value}'`,
+			path
+		)
+		
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+
+		return
+	end
+
+	local to = typeOf(value)
+
+	if to ~= "CFrame" then
+		newDc:Add(policy, `Expected CFrame, got '{to}'`, path)
 		
 		if dc ~= newDc then
 			newDc:Throw()
@@ -31,23 +56,23 @@ function CFrameM:_validate(value, dc, path, policy)
 		
 		return
 	end
-	
-	Base._validate(self, value, newDc, path, policy)
-	
-	if dc ~= newDc then
-		newDc:Throw()
-	end
 end
 
-function CFrameM:Coerce(value : any) : CFrame
+function CFrameM:Coerce(value : any) : CFrame?
+	local oneOfSet = self.oneOfSet
+	
+	local result = value
+
 	if value == nil then
 		if self.optional then
 			return nil
 		end
 		return self.default
 	end
-
-	local result = value
+	
+	if oneOfSet and not oneOfSet[value] then
+		return self.default
+	end
 	
 	if typeOf(result) ~= "CFrame" then
 		result = toType.CFrame(result)
@@ -57,23 +82,29 @@ function CFrameM:Coerce(value : any) : CFrame
 		return self.default
 	end
 	
-	return Base.Coerce(self, result)
+	return result
 end
 
 function CFrameM:Validate(value : any)
 	self:_validate(value, nil, nil, self.policy)
 end
 
-function CFrameM:IsValid(value : any) : boolean
-	if value == nil and self.optional then
+function CFrameM:IsValid(value : any)
+	local oneOfSet = self.oneOfSet
+
+	if value == nil and self.optional then 
 		return true
 	end
-	
+
+	if oneOfSet and not oneOfSet[value] then
+		return false
+	end
+
 	if typeOf(value) ~= "CFrame" then
 		return false
 	end
-	
-	return Base.IsValid(self, value)
+
+	return true
 end
 
 return setmetatable({}, {

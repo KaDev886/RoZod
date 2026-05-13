@@ -1,4 +1,5 @@
-local typeOf = require(script.Parent.typeOf)
+--!native
+--!optimize 2
 
 local Utils = {}
 
@@ -42,25 +43,24 @@ function Utils.sliceTable(t, i : number, j : number)
 end
 
 function Utils.isArray(t)
-	if typeOf(t) ~= "table" then
+	if typeof(t) ~= "table" then
 		return false
 	end
 
-	local count = 0
+	local i = 0
 
-	for key in t do
-		if typeOf(key) ~= "number" then
+	for k in t do
+		i += 1
+		if k ~= i then
 			return false
 		end
-		
-		count += 1
 	end
 
-	return count == #t
+	return true
 end
 
 function Utils.isDictionary(t)
-	if typeOf(t) ~= "table" then
+	if typeof(t) ~= "table" then
 		return false
 	end
 

@@ -8,14 +8,14 @@ These tests were performed in the Roblox Studio Server environment using `os.clo
 
 | Function | Data Type | Avg Ops/sec | Avg Latency |
 | :--- | :--- | :--- | :--- |
-| **IsValid** | Good Data | 5,028,410 | 0.00020 ms |
-| **IsValid** | Bad Data | 10,275,380 | 0.00009 ms |
-| **Coerce** | Good Data | 5,367,686 | 0.00021 ms |
-| **Coerce** | Bad Data | 2,941,176 | 0.00034 ms |
-| **Validate (Silent)** | Good Data | 842,034 | 0.00125 ms |
-| **Validate (Silent)** | Bad Data | 854,993 | 0.00133 ms |
-| **Validate (Warn)** | Good Data | 352,112 | 0.00341 ms |
-| **Validate (Warn)** | Bad Data | 8,675 | 0.14165 ms |
+| **IsValid** | Good Data | 5,644,618 | 0.00018 ms |
+| **IsValid** | Bad Data | 6,748,899 | 0.00015 ms |
+| **Coerce** | Good Data | 5,821,413 | 0.00017 ms |
+| **Coerce** | Bad Data | 3,057,310 | 0.00033 ms |
+| **Validate (Silent)** | Good Data | 11,008,245 | 0.00009 ms |
+| **Validate (Silent)** | Bad Data | 11,173,558 | 0.00009 ms |
+| **Validate (Warn)** | Good Data | 289,503 | 0.00345 ms |
+| **Validate (Warn)** | Bad Data | 7,209 | 0.13872 ms |
 
 ---
 
@@ -41,19 +41,19 @@ local testSchema = RoZod.Object({
 
 | Function | Scenario | Avg Ops/sec | Avg Latency |
 | :--- | :--- | :--- | :--- |
-| **IsValid** | Good Data | 285,196 | 0.00397 ms |
-| **IsValid** | Realistic Data | 217,325 | 0.00476 ms |
-| **IsValid** | Bad Data | 3,204,511 | 0.00031 ms |
-| **Coerce** | Good Data | 103,543 | 0.00966 ms |
-| **Coerce** | Realistic Data | 70,773 | 0.01417 ms |
-| **Coerce** | Bad Data | 67,616 | 0.01489 ms |
-| **Validate (Silent)** | Good Data | 216,057 | 0.00467 ms |
-| **Validate (Silent)** | Realistic Data | 145,968 | 0.00688 ms |
-| **Validate (Silent)** | Bad Data | 51,781 | 0.01937 ms |
-| **Validate (Warn)** | Good Data | 119,904 | 0.00823 ms |
-| **Validate (Warn)** | Realistic Data | 4,449 | 0.23963 ms |
-| **Validate (Warn)** | Bad Data | 4,806 | 0.21176 ms |
+| **IsValid** | Good Data | 327,428 | 0.00305 ms |
+| **IsValid** | Realistic Data | 260,029 | 0.00385 ms |
+| **IsValid** | Bad Data | 2,587,860 | 0.00039 ms |
+| **Coerce** | Good Data | 113,058 | 0.00885 ms |
+| **Coerce** | Realistic Data | 80,464 | 0.01243 ms |
+| **Coerce** | Bad Data | 72,360 | 0.01382 ms |
+| **Validate (Silent)** | Good Data | 10,968,761 | 0.00009 ms |
+| **Validate (Silent)** | Realistic Data | 11,335,170 | 0.00009 ms |
+| **Validate (Silent)** | Bad Data | 11,193,169 | 0.00009 ms |
+| **Validate (Warn)** | Good Data | 70,312 | 0.01422 ms |
+| **Validate (Warn)** | Realistic Data | 6,663 | 0.15008 ms |
+| **Validate (Warn)** | Bad Data | 6,046 | 0.16541 ms |
 
-*   **Good Data:** Matches the schema perfectly.
-*   **Realistic Data:** Includes extra keys that RoZod filters out.
-*   **Bad Data:** Multiple incorrect types deep within the structure.
+* **Good Data:** Matches the schema perfectly.
+* **Realistic Data:** Includes extra keys that RoZod filters out.
+* **Bad Data:** Multiple incorrect types deep within the structure.

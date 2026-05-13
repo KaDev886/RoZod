@@ -10,8 +10,12 @@ return function()
 			expect(schema:IsValid(123)).to.equal(true)
 		end)
 		
-		it("rejects strings", function()
+		it("rejects non-number values", function()
 			expect(schema:IsValid("123")).to.equal(false)
+		end)
+
+		it("rejects NaN number values", function()
+			expect(schema:IsValid(0/0)).to.equal(false)
 		end)
 		
 	end)

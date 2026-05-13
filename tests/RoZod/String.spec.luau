@@ -10,7 +10,7 @@ return function()
             expect(schema:IsValid("Hello, world!")).to.equal(true)
         end)
         
-        it("rejects numbers", function()
+        it("rejects non-string values", function()
             expect(schema:IsValid(123)).to.equal(false)
         end)
 		

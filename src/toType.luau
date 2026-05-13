@@ -1,3 +1,6 @@
+--!native
+--!optimize 2
+
 local tableUtils = require(script.Parent.tableUtils)
 
 local toType = {}
@@ -7,10 +10,6 @@ function toType.Vector3(value : any) : Vector3?
 
     if to == "Vector3" then
         return value
-    end
-
-	if value ~= value or to == "nil" then 
-        return nil
     end
 
     if to == "string" then
@@ -48,10 +47,6 @@ function toType.DictTable(value: any): { [any]: any }?
 
     if tableUtils.isDictionary(value) then
         return value
-    end
-
-    if value ~= value or to == "nil" then
-        return {}
     end
 
     if to == "string" then
@@ -97,10 +92,6 @@ function toType.Enum(value : any) : (Enum | EnumItem)?
 		return value
 	end
 
-    if value ~= value or to == "nil" then 
-        return nil
-    end
-
 	if to == "string" then
 		local segments = string.split(value, ".")
 
@@ -135,10 +126,6 @@ function toType.CFrame(value : any) : CFrame?
 		return value
 	end
 
-    if value ~= value or to == "nil" then 
-        return nil
-    end
-
 	if to == "Vector3" then
 		return CFrame.new(value)
 	end
@@ -161,10 +148,6 @@ function toType.Boolean(value : any) : boolean?
 		return value
 	end
 
-	if value ~= value or to == "nil" then
-		return nil
-	end
-
 	if to == "string" then
 		if value == "true" then
 			return true
@@ -181,10 +164,6 @@ function toType.Array(value : any) : {any}?
 
 	if tableUtils.isArray(value) then
 		return value
-	end
-
-	if value ~= value or to == "nil" then
-		return nil
 	end
 
 	if to == "string" then

@@ -1,10 +1,10 @@
 --!strict
 
-local DebugContext = require(script.Parent.DebugContext)
+local getValidDc = require(script.Parent.getValidDc)
 local typeOf = require(script.Parent.typeOf)
 
 export type BaseSchema<Self, Coerced> = {
-	expecteds: ({} | { any }),
+	oneOf: ({ any })?,
 	optional: boolean,
 	default: any,
 	manualPolicy: boolean,
@@ -14,7 +14,7 @@ export type BaseSchema<Self, Coerced> = {
 	Warn: (self: Self) -> Self,
 	Error: (self: Self) -> Self,
 	Default: (self: Self, value: any) -> Self,
-	Expected: (self: Self, expecteds: { any }) -> Self,
+	OneOf: (self: Self, values: { any }) -> Self,
 	Optional: (self: Self) -> Self,
 	
 	Coerce: (self: Self, value: any) -> Coerced,
@@ -28,69 +28,90 @@ Base.__index = Base
 function Base.new<Self, Coerced>() : BaseSchema<Self, Coerced>
 	local self = setmetatable({}, Base) :: any
 	
-	self.expecteds = {}
+	self.oneOf = nil
+	self.oneOfSet = nil
+	
 	self.optional = false
 	self.default = nil
 	
 	self.manualPolicy = false
 	self.policy = "Error"
+	
+	self._schema = true
 
 	return self
 end
 
-function Base:_getValidDc(dc : DebugContext.dc?) : DebugContext.dc
-	if dc then
-		if typeOf(dc) == "DebugContext" then
-			return dc
-		else
-			return DebugContext.new()
-		end
-	else
-		return DebugContext.new()
+function Base:_matchesOneOf(value : any) : boolean
+	local oneOfSet = self.oneOfSet
+
+	if oneOfSet and not oneOfSet[value] then
+		return false
 	end
+	
+	return true
 end
 
-function Base:_validateDefault()
-	if self.default ~= nil and not self:IsValid(self.default) then
-		local newDc = self:_getValidDc()
-		
-		newDc:Add(
-			"Error", 
-			`Invalid default value. Expected a value that matches the schema, got '{tostring(self.default)}'`
-		)
-		
-		newDc:Throw()
+function Base:_matchesType(value : any) : boolean
+	return true
+end
+
+function Base:_matchesRules(value : any) : boolean
+	return true
+end
+
+function Base:_validateSchema()
+	local dc = getValidDc()
+	
+	local default = self.default
+	local oneOf = self.oneOf
+
+	if default ~= nil then
+		if not self:_matchesOneOf(default) then
+			dc:Add(
+				"Error",
+				`Default value does not exist in OneOf set, got '{default}'`
+			)
+		end
+
+		if not self:_matchesType(default) then
+			dc:Add(
+				"Error",
+				`Default value does not match schema type, got '{default}'`
+			)
+		end
+
+		if not self:_matchesRules(default) then
+			dc:Add(
+				"Error",
+				`Default value violates schema rules, got '{default}'`
+			)
+		end
 	end
+
+	if oneOf then
+		for _, value in oneOf do
+			if not self:_matchesType(value) then
+				dc:Add(
+					"Error",
+					`OneOf contains value with invalid type, got '{value}'`
+				)
+			end
+
+			if not self:_matchesRules(value) then
+				dc:Add(
+					"Error",
+					`OneOf contains value that violates schema rules, got '{value}'`
+				)
+			end
+		end
+	end
+
+	dc:Throw()
 end
 
 function Base:_validate(value, dc, path, policy)
-	if value == nil and self.optional then 
-		return
-	end
-	
-	local newDc = self:_getValidDc(dc)
-	
-	if #self.expecteds ~= 0 and not table.find(self.expecteds, value) then
-		local validExpecteds = {}
-		
-		for _, expected in self.expecteds do
-			if typeof(expected) == "Vector3" then
-				table.insert(validExpecteds, `({tostring(expected)})`)
-			else
-				table.insert(validExpecteds, tostring(expected))
-			end
-		end
-		
-		newDc:Add(
-			policy, 
-			`Expected one of: {table.concat(validExpecteds, " | ")} got '{tostring(value)}'`,
-			path
-		)
-		
-		if dc ~= newDc then
-			newDc:Throw()
-		end
-	end
+	return nil
 end
 
 function Base:Silent()
@@ -113,36 +134,30 @@ end
 
 function Base:Default(value : any)
 	self.default = value
-	self:_validateDefault()
-
+	self:_validateSchema()
 	return self
 end
 
-function Base:Expected(expecteds : { any })
-	local newDc = self:_getValidDc()
+function Base:OneOf(values : { any })
+	local newDc = getValidDc()
 	
-	if typeOf(expecteds) ~= "table" then
-		newDc:Add("Error", `Expecteds must be a table, got '{typeOf(expecteds)}'`)
+	if typeOf(values) ~= "table" then
+		newDc:Add("Error", `OneOf must be a table, got '{typeOf(values)}'`)
 		newDc:Throw()
 		
-		return self
+		return
 	end
 
-	local result = false
+	local lookup = {}
 
-	for _, expected in expecteds do
-		if not self:IsValid(expected) then
-			newDc:Add("Error", `Invalid expected value: '{tostring(expected)}'`)
-			result = true
-		end
+	for _, value in values do
+		lookup[value] = true
 	end
-	
-	if result then
-		newDc:Throw()
-	end
-	
-	self.expecteds = expecteds
-	self:_validateDefault()
+
+	self.oneOf = values
+	self.oneOfSet = lookup
+
+	self:_validateSchema()
 	
 	return self
 end
@@ -152,11 +167,7 @@ function Base:Optional()
 	return self
 end
 
-function Base:Coerce(value : any)
-	if #self.expecteds ~= 0 and not table.find(self.expecteds, value) then
-		return self.default
-	end
-	
+function Base:Coerce(value : any) : any
 	return value
 end
 
@@ -165,14 +176,6 @@ function Base:Validate(value : any)
 end
 
 function Base:IsValid(value : any)
-	if value == nil and self.optional then 
-		return true
-	end
-
-	if #self.expecteds ~= 0 and not table.find(self.expecteds, value) then
-		return false
-	end
-	
 	return true
 end
 
