@@ -11,12 +11,14 @@ function toType.Vector3(value : any) : Vector3?
     if to == "Vector3" then
         return value
     end
-
+    
     if to == "string" then
         local coords = {}
+        local count = 0
 
         for s in string.gmatch(value, "([^,]+)") do
-            table.insert(coords, tonumber(s))
+            count += 1
+            coords[count] = tonumber(s)
         end
 
 		if #coords == 0 then
@@ -29,16 +31,19 @@ function toType.Vector3(value : any) : Vector3?
 	return nil
 end
 
-local function processPair(result, token)
+local function processPair(result, token, arrayCount)
     local trimmed = token:match("^%s*(.-)%s*$")
-    if trimmed == "" then return end
+    if trimmed == "" then return arrayCount end
 
     local key, val = trimmed:match("([^=]+)%s*=%s*(.+)")
     
     if key and val then
         result[key:match("^%s*(.-)%s*$")] = val:match("^%s*(.-)%s*$")
+        return arrayCount
     else
-        table.insert(result, trimmed)
+        arrayCount += 1
+        result[arrayCount] = trimmed
+        return arrayCount
     end
 end
 
@@ -59,7 +64,8 @@ function toType.DictTable(value: any): { [any]: any }?
         local content = str:sub(2, -2)
         local result = {}
         local depth = 0
-        local currentToken = ""
+        local tokenStart = 1
+        local arrayCount = 0
         
         for i = 1, #content do
             local char = content:sub(i, i)
@@ -68,17 +74,13 @@ function toType.DictTable(value: any): { [any]: any }?
                 depth += 1
             elseif char == "}" then
                 depth -= 1
-            end
-            
-            if char == "," and depth == 0 then
-                processPair(result, currentToken)
-                currentToken = ""
-            else
-                currentToken = currentToken .. char
+            elseif char == "," and depth == 0 then
+                arrayCount = processPair(result, content:sub(tokenStart, i - 1), arrayCount)
+                tokenStart = i + 1
             end
         end
         
-        processPair(result, currentToken)
+        processPair(result, content:sub(tokenStart, #content), arrayCount)
         return result
     end
 
@@ -176,9 +178,10 @@ function toType.Array(value : any) : {any}?
 		local content = str:sub(2, -2)
 
 		local result = {}
+		local resultCount = 0
 
 		local depth = 0
-        local currentToken = ""
+        local tokenStart = 1
 
 		for i = 1, #content do
             local char = content:sub(i, i)
@@ -187,25 +190,23 @@ function toType.Array(value : any) : {any}?
                 depth += 1
             elseif char == "}" then
                 depth -= 1
-            end
-
-            if char == "," and depth == 0 then
-                local trimmed = currentToken:match("^%s*(.-)%s*$")
+            elseif char == "," and depth == 0 then
+                local trimmed = content:sub(tokenStart, i - 1):match("^%s*(.-)%s*$")
                 if trimmed ~= "" then
-                    table.insert(result, trimmed)
+                    resultCount += 1
+                    result[resultCount] = trimmed
                 end
-                currentToken = ""
-            else
-                currentToken = currentToken .. char
+                tokenStart = i + 1
             end
         end
 
-		local lastTrimmed = currentToken:match("^%s*(.-)%s*$")
+		local lastTrimmed = content:sub(tokenStart, #content):match("^%s*(.-)%s*$")
         if lastTrimmed ~= "" then
-            table.insert(result, lastTrimmed)
+            resultCount += 1
+            result[resultCount] = lastTrimmed
         end
 
-		if #result == 0 then
+		if resultCount == 0 then
 			return nil
 		end
 		

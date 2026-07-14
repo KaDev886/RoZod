@@ -1,8 +1,10 @@
 --!strict
+--!native
+--!optimize 2
 
-local getValidDc = require(script.Parent.Parent.getValidDc)
-local typeOf = require(script.Parent.Parent.typeOf)
-local Base = require(script.Parent.Parent.Base)
+const getValidDc = require(script.Parent.Parent.getValidDc)
+const typeOf = require(script.Parent.Parent.typeOf)
+const Base = require(script.Parent.Parent.Base)
 
 export type StringSchema = Base.BaseSchema<StringSchema, string?> & {
 	MinLength: (self: StringSchema, minLength: number) -> StringSchema,
@@ -14,17 +16,18 @@ String.__index = String
 
 setmetatable(String, Base)
 
+local KIND_SET = { string = true }
+
 function String.new() : StringSchema
 	local self = setmetatable(Base.new(), String) :: any
+
+	self.kindStr = "string"
+	self.kindSet = KIND_SET
 	
 	self.minLength = 0
 	self.maxLength = math.huge
 	
 	return self
-end
-
-function String:_matchesType(value : any) : boolean
-	return typeOf(value) == "string"
 end
 
 function String:_matchesRules(value : any) : boolean
@@ -42,40 +45,21 @@ end
 function String:_validate(value, dc, path, policy)
 	if policy == "Silent" then return end
 
-	local newDc = getValidDc(dc)
-
-	local oneOfSet = self.oneOfSet
-
 	if value == nil and self.optional then
 		return
 	end
-	
-	if oneOfSet and not oneOfSet[value] then
-		newDc:Add(
-			policy, 
-			`Expected one of: {table.concat(self.oneOf, " | ")} got '{value}'`,
-			path
-		)
-				
+
+	const newDc = getValidDc(dc)
+
+	Base._validate(self, value, newDc, path, policy)
+
+	if newDc:HasMessages() then
 		if dc ~= newDc then
 			newDc:Throw()
 		end
-
 		return
 	end
 
-	local to = typeOf(value)
-	
-	if to ~= "string" then
-		newDc:Add(policy, `Expected string, got '{to}'`, path)
-		
-		if dc ~= newDc then
-			newDc:Throw()
-		end
-		
-		return
-	end
-	
 	if #value < self.minLength then
 		newDc:Add(
 			policy, 
@@ -100,13 +84,11 @@ function String:_validate(value, dc, path, policy)
 		if dc ~= newDc then
 			newDc:Throw()
 		end
-		
-		return
 	end
 end
 
 function String:MinLength(minLength : number) : StringSchema
-	local newDc = getValidDc()
+	const newDc = getValidDc()
 
 	if typeOf(minLength) ~= "number" then
 		newDc:Add("Error", `Expected number for minLength, got '{typeOf(minLength)}'`)
@@ -118,8 +100,8 @@ function String:MinLength(minLength : number) : StringSchema
 		newDc:Throw()
 	end
 
-	if minLength == math.huge then
-		newDc:Add("Error", `minLength cannot be infinity`)
+	if minLength < 0 then
+		newDc:Add("Error", `minLength cannot be negative`)
 		newDc:Throw()
 	end
 
@@ -134,11 +116,11 @@ function String:MinLength(minLength : number) : StringSchema
 	self.minLength = minLength
 	self:_validateSchema()
 	
-	return self
+	return self :: any
 end
 
 function String:MaxLength(maxLength : number) : StringSchema
-	local newDc = getValidDc()
+	const newDc = getValidDc()
 
 	if typeOf(maxLength) ~= "number" then
 		newDc:Add("Error", `Expected number for maxLength, got '{typeOf(maxLength)}'`)
@@ -166,68 +148,25 @@ function String:MaxLength(maxLength : number) : StringSchema
 	self.maxLength = maxLength
 	self:_validateSchema()
 
-	return self
+	return self :: any
 end
 
 function String:Coerce(value : any) : string?
-	local oneOfSet = self.oneOfSet
-	
-	local result = value
+	local result = Base.Coerce(self, value)
 
-	if value == nil then
-		if self.optional then
-			return nil
-		end
-		return self.default
-	end
-	
-	if oneOfSet and not oneOfSet[value] then
-		return self.default
+	if result == nil then
+		return nil
 	end
 
-	if typeOf(result) ~= "string" then
+	if typeof(result) ~= "string" then
 		result = tostring(result)
 	end
 
-	if result == nil then
-		return self.default
+	if #result < self.minLength or #result > self.maxLength then
+		return nil
 	end
 	
 	return result
 end
 
-function String:Validate(value : any)
-	self:_validate(value, nil, nil, self.policy)
-end
-
-function String:IsValid(value : any)
-	local oneOfSet = self.oneOfSet
-
-	if value == nil and self.optional then 
-		return true
-	end
-
-	if oneOfSet and not oneOfSet[value] then
-		return false
-	end
-
-	if typeOf(value) ~= "string" then
-		return false
-	end
-
-	if #value < self.minLength then
-		return false
-	end
-	
-	if #value > self.maxLength then
-		return false
-	end
-
-	return true
-end
-
-return setmetatable({}, {
-	__call = function()
-		return String.new()
-	end
-})
+return String.new

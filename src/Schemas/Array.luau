@@ -1,11 +1,13 @@
 --!strict
+--!native
+--!optimize 2
 
-local getValidDc = require(script.Parent.Parent.getValidDc)
-local typeOf = require(script.Parent.Parent.typeOf)
-local toType = require(script.Parent.Parent.toType)
-local tableUtils = require(script.Parent.Parent.tableUtils)
-local Base = require(script.Parent.Parent.Base)
-local Any = require(script.Parent.Any)
+const getValidDc = require(script.Parent.Parent.getValidDc)
+const typeOf = require(script.Parent.Parent.typeOf)
+const toType = require(script.Parent.Parent.toType)
+const tableUtils = require(script.Parent.Parent.tableUtils)
+const Base = require(script.Parent.Parent.Base)
+const Any = require(script.Parent.Any)
 
 export type ArraySchema = Base.BaseSchema<ArraySchema, ({} | { any })?> & {
 	MinLength : (self : ArraySchema, minLength : number) -> ArraySchema,
@@ -17,9 +19,14 @@ Array.__index = Array
 
 setmetatable(Array, Base)
 
+local KIND_SET = { table = true }
+
 function Array.new(arrayType : Any.AnySchema?) : ArraySchema
 	local self = setmetatable(Base.new(), Array) :: any
 	
+	self.kindStr = "table"
+	self.kindSet = KIND_SET
+
 	self.arrayType = if typeOf(arrayType) == "Schema" then arrayType else Any()
 
 	self.minLength = nil
@@ -28,23 +35,25 @@ function Array.new(arrayType : Any.AnySchema?) : ArraySchema
 	return self
 end
 
-function Array:_matchesType(value : any) : boolean
-	return tableUtils.isArray(value)
-end
-
 function Array:_matchesRules(value : any) : boolean
+	local i = 0
+	
+	for k, val in value do
+		i += 1
+		if k ~= i then
+			return false
+		end
+		if not self.arrayType:IsValid(val) then
+			return false
+		end
+	end
+
 	if self.minLength and #value < self.minLength then
 		return false
 	end
 	
 	if self.maxLength and #value > self.maxLength then
 		return false
-	end
-	
-	for _, val in value do
-		if not self.arrayType:IsValid(val) then
-			return false
-		end
 	end
 
 	return true
@@ -53,37 +62,18 @@ end
 function Array:_validate(value, dc, path, policy)
 	if policy == "Silent" then return end
 
-	local newDc = getValidDc(dc)
-
-	local oneOfSet = self.oneOfSet
-
 	if value == nil and self.optional then
 		return
 	end
-	
-	if oneOfSet and not oneOfSet[value] then
-		newDc:Add(
-			policy, 
-			`Expected one of: {table.concat(self.oneOf, " | ")} got '{value}'`,
-			path
-		)
-		
+
+	const newDc = getValidDc(dc)
+
+	Base._validate(self, value, newDc, path, policy)
+
+	if newDc:HasMessages() then
 		if dc ~= newDc then
 			newDc:Throw()
 		end
-
-		return
-	end
-
-	local to = typeOf(value)
-	
-	if to ~= "table" then
-		newDc:Add(policy, `Expected table, got '{to}'`, path)
-		
-		if dc ~= newDc then
-			newDc:Throw()
-		end
-		
 		return
 	end
 
@@ -93,12 +83,12 @@ function Array:_validate(value, dc, path, policy)
 		i += 1
 
 		if key ~= i then
-			newDc:Add(policy, "table don't is array", path)
-			return
+			newDc:Add(policy, "Table is not an array", path)
+			break
 		end
 
-		local newPath = path and `{path}[{key}]` or `[{key}]`
-
+		local newPath = { parent = path, key = key, isIndex = true }
+		
 		local newPolicy = self.arrayType.manualPolicy and 
 		                  self.arrayType.policy or 
 						  policy or 
@@ -107,8 +97,10 @@ function Array:_validate(value, dc, path, policy)
 		self.arrayType:_validate(val, newDc, newPath, newPolicy)
 	end
 
-	if dc ~= newDc and newDc:HasMessages() then
-		newDc:Throw()
+	if newDc:HasMessages() then
+		if dc ~= newDc then
+			newDc:Throw()
+		end
 		return
 	end
 
@@ -140,15 +132,15 @@ function Array:_validate(value, dc, path, policy)
 end
 
 function Array:MinLength(minLength : number) : ArraySchema
-	local newDc = getValidDc()
+	const newDc = getValidDc()
 
 	if typeOf(minLength) ~= "number" then
 		newDc:Add("Error", `Expected number for minLength, got '{typeOf(minLength)}'`)
 		newDc:Throw()
 	end
-	
-	if minLength == math.huge then
-		newDc:Add("Error", `minLength cannot be infinity`)
+
+	if minLength < 0 then
+		newDc:Add("Error", `minLength cannot be negative`)
 		newDc:Throw()
 	end
 
@@ -163,11 +155,11 @@ function Array:MinLength(minLength : number) : ArraySchema
 	self.minLength = minLength
 	self:_validateSchema()
 	
-	return self
+	return self :: any
 end
 
 function Array:MaxLength(maxLength : number) : ArraySchema
-	local newDc = getValidDc()
+	const newDc = getValidDc()
 
 	if typeOf(maxLength) ~= "number" then
 		newDc:Add("Error", `Expected number for maxLength, got '{typeOf(maxLength)}'`)
@@ -190,29 +182,24 @@ function Array:MaxLength(maxLength : number) : ArraySchema
 	self.maxLength = maxLength
 	self:_validateSchema()
 
-	return self
+	return self :: any
 end
 
 function Array:Coerce(value : any) : ({} | { any })?
-	local oneOfSet = self.oneOfSet
-	
-	local result = value
+	local result = Base.Coerce(self, value)
 
-	if value == nil then
-		if self.optional then
-			return nil
-		end
-		return self.default
+	if result == nil then
+		return nil
 	end
-	
-	if oneOfSet and not oneOfSet[value] then
-		return self.default
+
+	if self:IsValid(result) then
+		return result
 	end
 
 	if not tableUtils.isArray(result) then
 		result = toType.Array(result)
 	else
-		result = tableUtils.copyTable(result)
+		result = table.clone(result)
 	end
 
 	if result then
@@ -228,66 +215,19 @@ function Array:Coerce(value : any) : ({} | { any })?
 		end
 	end
 	
-	if result == nil or #result == 0 then
+	if result == nil then
 		return self.default
 	end
 
-	-- I might remove this in the future
 	if self.minLength and #result < self.minLength then
-		result = tableUtils.fillTable(result, self.minLength, self.arrayType:Coerce())
+		return nil
 	end
-	
+
 	if self.maxLength and #result > self.maxLength then
-		result = tableUtils.sliceTable(result, 1, self.maxLength)
+		return nil
 	end
-	
+
 	return result
 end
 
-function Array:Validate(value : any)
-	self:_validate(value, nil, nil, self.policy)
-end
-
-function Array:IsValid(value : any)
-	local oneOfSet = self.oneOfSet
-
-	if value == nil and self.optional then 
-		return true
-	end
-
-	if oneOfSet and not oneOfSet[value] then
-		return false
-	end
-
-	if typeOf(value) ~= "table" then
-		return false
-	end
-	
-	local i = 0
-	
-	for k, val in value do
-		i += 1
-		if k ~= i then
-			return false
-		end
-		if not self.arrayType:IsValid(val) then
-			return false
-		end
-	end
-
-	if self.minLength and #value < self.minLength then
-		return false
-	end
-	
-	if self.maxLength and #value > self.maxLength then
-		return false
-	end
-
-	return true
-end
-
-return setmetatable({}, {
-	__call = function(_, arrayType : Any.AnySchema?)
-		return Array.new(arrayType)
-	end
-})
+return Array.new

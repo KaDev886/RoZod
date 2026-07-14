@@ -8,14 +8,14 @@ These tests were performed in the Roblox Studio Server environment using `os.clo
 
 | Function | Data Type | Avg Ops/sec | Avg Latency |
 | :--- | :--- | :--- | :--- |
-| **IsValid** | Good Data | 5,644,618 | 0.00018 ms |
-| **IsValid** | Bad Data | 6,748,899 | 0.00015 ms |
-| **Coerce** | Good Data | 5,821,413 | 0.00017 ms |
-| **Coerce** | Bad Data | 3,057,310 | 0.00033 ms |
-| **Validate (Silent)** | Good Data | 11,008,245 | 0.00009 ms |
-| **Validate (Silent)** | Bad Data | 11,173,558 | 0.00009 ms |
-| **Validate (Warn)** | Good Data | 289,503 | 0.00345 ms |
-| **Validate (Warn)** | Bad Data | 7,209 | 0.13872 ms |
+| **IsValid** | Good Data | 4,417,886 | 0.00023 ms |
+| **IsValid** | Totally Broken Data | 6,816,726 | 0.00015 ms |
+| **Coerce** | Good Data | 6,478,891 | 0.00015 ms |
+| **Coerce** | Totally Broken Data | 3,322,791 | 0.00030 ms |
+| **Validate (Silent)** | Good Data | 10,450,194 | 0.00010 ms |
+| **Validate (Silent)** | Totally Broken Data | 10,473,178 | 0.00010 ms |
+| **Validate (Warn)** | Good Data | 435,635 | 0.00230 ms |
+| **Validate (Warn)** | Totally Broken Data | 8,464 | 0.11814 ms |
 
 ---
 
@@ -28,7 +28,9 @@ local testSchema = RoZod.Object({
     Id = RoZod.String(),
     Data = RoZod.Object({
         Timestamp = RoZod.Number(),
-        Tags = RoZod.Array(RoZod.String()),
+        Tags = RoZod.Array(
+            RoZod.String():OneOf({ "admin", "tester", "vip" })
+        ),
         Settings = RoZod.Object({
             Enabled = RoZod.Boolean(),
             Value = RoZod.Number()
@@ -39,21 +41,40 @@ local testSchema = RoZod.Object({
 
 **Results:**
 
+### Without OneOf
+
 | Function | Scenario | Avg Ops/sec | Avg Latency |
 | :--- | :--- | :--- | :--- |
-| **IsValid** | Good Data | 327,428 | 0.00305 ms |
-| **IsValid** | Realistic Data | 260,029 | 0.00385 ms |
-| **IsValid** | Bad Data | 2,587,860 | 0.00039 ms |
-| **Coerce** | Good Data | 113,058 | 0.00885 ms |
-| **Coerce** | Realistic Data | 80,464 | 0.01243 ms |
-| **Coerce** | Bad Data | 72,360 | 0.01382 ms |
-| **Validate (Silent)** | Good Data | 10,968,761 | 0.00009 ms |
-| **Validate (Silent)** | Realistic Data | 11,335,170 | 0.00009 ms |
-| **Validate (Silent)** | Bad Data | 11,193,169 | 0.00009 ms |
-| **Validate (Warn)** | Good Data | 70,312 | 0.01422 ms |
-| **Validate (Warn)** | Realistic Data | 6,663 | 0.15008 ms |
-| **Validate (Warn)** | Bad Data | 6,046 | 0.16541 ms |
+| **IsValid** | Good Data | 256,664 | 0.00390 ms |
+| **IsValid** | Partially Broken Data | 202,974 | 0.00493 ms |
+| **IsValid** | Totally Broken Data | 2,128,719 | 0.00047 ms |
+| **Coerce** | Good Data | 241,357 | 0.00414 ms |
+| **Coerce** | Partially Broken Data | 84,185 | 0.01188 ms |
+| **Coerce** | Totally Broken Data | 108,742 | 0.00920 ms |
+| **Validate (Silent)** | Good Data | 10,929,320 | 0.00009 ms |
+| **Validate (Silent)** | Partially Broken Data | 10,996,503 | 0.00009 ms |
+| **Validate (Silent)** | Totally Broken Data | 10,677,623 | 0.00009 ms |
+| **Validate (Warn)** | Good Data | 88,225 | 0.01133 ms |
+| **Validate (Warn)** | Partially Broken Data | 7,307 | 0.13685 ms |
+| **Validate (Warn)** | Totally Broken Data | 8,263 | 0.12103 ms |
+
+### With OneOf
+
+| Function | Scenario | Avg Ops/sec | Avg Latency |
+| :--- | :--- | :--- | :--- |
+| **IsValid** | Good Data | 268,861 | 0.00372 ms |
+| **IsValid** | Partially Broken Data | 341,361 | 0.00293 ms |
+| **IsValid** | Totally Broken Data | 2,109,308 | 0.00047 ms |
+| **Coerce** | Good Data | 246,669 | 0.00405 ms |
+| **Coerce** | Partially Broken Data | 87,492 | 0.01143 ms |
+| **Coerce** | Totally Broken Data | 137,656 | 0.00726 ms |
+| **Validate (Silent)** | Good Data | 9,756,859 | 0.00010 ms |
+| **Validate (Silent)** | Partially Broken Data | 10,264,306 | 0.00010 ms |
+| **Validate (Silent)** | Totally Broken Data | 10,246,007 | 0.00010 ms |
+| **Validate (Warn)** | Good Data | 86,327 | 0.01158 ms |
+| **Validate (Warn)** | Partially Broken Data | 5,834 | 0.17141 ms |
+| **Validate (Warn)** | Totally Broken Data | 8,003 | 0.12495 ms |
 
 * **Good Data:** Matches the schema perfectly.
-* **Realistic Data:** Includes extra keys that RoZod filters out.
-* **Bad Data:** Multiple incorrect types deep within the structure.
+* **Partially Broken Data:** Includes extra keys that RoZod filters out and some type mismatches.
+* **Totally Broken Data:** Multiple incorrect types deep within the structure.

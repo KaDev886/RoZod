@@ -1,10 +1,10 @@
 local globalConfig = {}
 
 local defaultConfig = {
-    debugName = "RoZod",
+    debugName = "RoZod"
 }
 
-local currentConfig = nil
+local currentConfig = defaultConfig
 
 local function coerce(before : {}, new : {})
     local cleanConfig = {}
@@ -16,7 +16,7 @@ local function coerce(before : {}, new : {})
             cleanConfig[key] = value
         else
             if typeof(newValue) == "table" then
-                cleanConfig[key] = coerce(newValue, cleanConfig)
+                cleanConfig[key] = coerce(value, newValue)
             else
                 cleanConfig[key] = newValue
             end

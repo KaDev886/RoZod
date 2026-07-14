@@ -1,10 +1,15 @@
 --!strict
+--!native
+--!optimize 2
 
-local getValidDc = require(script.Parent.getValidDc)
-local typeOf = require(script.Parent.typeOf)
+const getValidDc = require(script.Parent.getValidDc)
+const typeOf = require(script.Parent.typeOf)
 
 export type BaseSchema<Self, Coerced> = {
-	oneOf: ({ any })?,
+	kindStr: string?,
+	kindSet: { [string]: true }?,
+	oneOfStr: string?,
+	oneOfSet: { [string]: true },
 	optional: boolean,
 	default: any,
 	manualPolicy: boolean,
@@ -28,12 +33,15 @@ Base.__index = Base
 function Base.new<Self, Coerced>() : BaseSchema<Self, Coerced>
 	local self = setmetatable({}, Base) :: any
 	
-	self.oneOf = nil
+	self.kindStr = nil
+	self.kindSet = nil
+
+	self.oneOfStr = nil
 	self.oneOfSet = nil
 	
 	self.optional = false
 	self.default = nil
-	
+		
 	self.manualPolicy = false
 	self.policy = "Error"
 	
@@ -43,7 +51,7 @@ function Base.new<Self, Coerced>() : BaseSchema<Self, Coerced>
 end
 
 function Base:_matchesOneOf(value : any) : boolean
-	local oneOfSet = self.oneOfSet
+	const oneOfSet = self.oneOfSet
 
 	if oneOfSet and not oneOfSet[value] then
 		return false
@@ -52,29 +60,30 @@ function Base:_matchesOneOf(value : any) : boolean
 	return true
 end
 
-function Base:_matchesType(value : any) : boolean
-	return true
-end
-
 function Base:_matchesRules(value : any) : boolean
 	return true
 end
 
 function Base:_validateSchema()
-	local dc = getValidDc()
-	
-	local default = self.default
-	local oneOf = self.oneOf
+	const dc = getValidDc()
+
+	const default = self.default
+	const oneOfSet = self.oneOfSet
+	const kindSet = self.kindSet
 
 	if default ~= nil then
-		if not self:_matchesOneOf(default) then
+		if default ~= default then
+			dc:Add("Error", "Default value is NaN")
+		end
+
+		if oneOfSet and not self:_matchesOneOf(default) then
 			dc:Add(
 				"Error",
 				`Default value does not exist in OneOf set, got '{default}'`
 			)
 		end
 
-		if not self:_matchesType(default) then
+		if kindSet and not kindSet[typeof(default)] then
 			dc:Add(
 				"Error",
 				`Default value does not match schema type, got '{default}'`
@@ -89,9 +98,13 @@ function Base:_validateSchema()
 		end
 	end
 
-	if oneOf then
-		for _, value in oneOf do
-			if not self:_matchesType(value) then
+	if oneOfSet then
+		for value in oneOfSet do
+			if value ~= value then
+				dc:Add("Error", "OneOf contains NaN value")
+			end
+
+			if kindSet and not kindSet[typeof(value)] then
 				dc:Add(
 					"Error",
 					`OneOf contains value with invalid type, got '{value}'`
@@ -111,7 +124,60 @@ function Base:_validateSchema()
 end
 
 function Base:_validate(value, dc, path, policy)
-	return nil
+	if policy == "Silent" then return end
+
+	const newDc = getValidDc(dc)
+	
+	const oneOfSet = self.oneOfSet
+	const kindSet = self.kindSet
+	
+	if value == nil then
+		if self.optional then
+			return
+		end
+
+		newDc:Add(policy, "Expected a valid value, got 'nil'", path)
+
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+
+		return
+	end
+
+	if value ~= value then
+		newDc:Add(policy, "Expected valid value, got 'NaN'", path)
+
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+
+		return
+	end
+
+	if oneOfSet and not oneOfSet[value] then
+		newDc:Add(
+			policy, 
+			`Expected one of: ({self.oneOfStr}) got '{value}'`, 
+			path
+		)
+		
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+		
+		return
+	end
+	
+	if kindSet and not kindSet[typeof(value)] then
+		newDc:Add(policy, `Expected ({self.kindStr}) got '{typeOf(value)}'`, path)
+		
+		if dc ~= newDc then
+			newDc:Throw()
+		end
+		
+		return
+	end
 end
 
 function Base:Silent()
@@ -139,7 +205,7 @@ function Base:Default(value : any)
 end
 
 function Base:OneOf(values : { any })
-	local newDc = getValidDc()
+	const newDc = getValidDc()
 	
 	if typeOf(values) ~= "table" then
 		newDc:Add("Error", `OneOf must be a table, got '{typeOf(values)}'`)
@@ -154,9 +220,14 @@ function Base:OneOf(values : { any })
 		lookup[value] = true
 	end
 
-	self.oneOf = values
-	self.oneOfSet = lookup
+	local parts = {}
+	for _, v in values do
+		parts[#parts + 1] = tostring(v)
+	end
 
+	self.oneOfStr = table.concat(parts, " | ")
+	self.oneOfSet = lookup
+	
 	self:_validateSchema()
 	
 	return self
@@ -168,6 +239,23 @@ function Base:Optional()
 end
 
 function Base:Coerce(value : any) : any
+	if value == nil then
+		if self.optional then
+			return nil
+		end
+		return self.default
+	end
+
+	if value ~= value then
+		return self.default
+	end
+	
+	const oneOfSet = self.oneOfSet
+	
+	if oneOfSet and not oneOfSet[value] then
+		return self.default
+	end
+
 	return value
 end
 
@@ -176,6 +264,30 @@ function Base:Validate(value : any)
 end
 
 function Base:IsValid(value : any)
+	if value == nil then
+		return self.optional
+	end
+
+	if value ~= value then
+		return false
+	end
+
+	const oneOfSet = self.oneOfSet
+
+	if oneOfSet and not oneOfSet[value] then
+		return false
+	end
+	
+	const kindSet = self.kindSet
+	
+	if kindSet and not kindSet[typeof(value)] then
+		return false
+	end
+	
+	if not self:_matchesRules(value) then
+		return false
+	end
+	
 	return true
 end
 

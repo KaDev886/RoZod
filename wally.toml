@@ -1,6 +1,6 @@
 [package]
 name = "kadev886/rozod"
-version = "2.0.0"
+version = "2.0.1"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 

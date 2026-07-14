@@ -1,15 +1,35 @@
 --!strict
+
 local globalConfig = require(script.Parent.globalConfig)
 
 export type dc = {
-	hasMessages: boolean,
 	messages: {any},
 	
 	new: () -> dc,
-	Add: (self: dc, policy: ("Warn" | "Error"), message: string, path: string?) -> (),
+	Add: (self: dc, policy: ("Warn" | "Error"), message: string, path: any?) -> (),
 	Throw: (self: dc) -> (),
 	HasMessages: (self: dc) -> boolean
 }
+
+local function resolvePath(path : any) : string?
+	if path == nil then
+		return nil
+	end
+
+	if typeof(path) == "string" then
+		return path
+	end
+
+	local parentStr = resolvePath(path.parent)
+
+	if path.isIndex then
+		local segment = "[" .. tostring(path.key) .. "]"
+		return if parentStr then parentStr .. segment else segment
+	end
+
+	local segment = tostring(path.key)
+	return if parentStr then parentStr .. "." .. segment else segment
+end
 
 local DebugContext = {}
 DebugContext.__index = DebugContext
@@ -22,7 +42,7 @@ function DebugContext.new() : dc
 	return self
 end
 
-function DebugContext:Add(policy : ("Warn" | "Error"), message : string, path : string?)
+function DebugContext:Add(policy : ("Warn" | "Error"), message : string, path : any?)
 	table.insert(self.messages, {
 		type = policy,
 		message = message,
@@ -36,14 +56,10 @@ function DebugContext:Throw()
 	local errorMsg = ""
 	local warnMsg = ""
 
-	for i, msg in ipairs(self.messages) do
-		local finalMsg = `[{config.debugName}] {msg.type}: `
-		
-		if not msg.path then
-			finalMsg = finalMsg .. msg.message
-		else
-			finalMsg = finalMsg .. `{msg.path} | {msg.message}`
-		end
+	for _, msg in ipairs(self.messages) do
+		local resolvedPath = resolvePath(msg.path)
+		local message = resolvedPath and `{resolvedPath} | {msg.message}` or msg.message
+		local finalMsg = `[{config.debugName}] {msg.type}: {message}`
 		
 		if msg.type == "Error" then
 			errorMsg = errorMsg .. "\n" .. finalMsg
