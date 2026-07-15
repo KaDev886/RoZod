@@ -47,7 +47,7 @@ local RoZod = require(path.to.RoZod)
 Add to `wally.toml`:
 
 ```toml
-RoZod = "kadev886/rozod@2.0.0"
+RoZod = "kadev886/rozod@2.0.1"
 ```
 
 Install:
