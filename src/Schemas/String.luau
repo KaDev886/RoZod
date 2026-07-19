@@ -16,7 +16,7 @@ String.__index = String
 
 setmetatable(String, Base)
 
-local KIND_SET = { string = true }
+const KIND_SET = { string = true }
 
 function String.new() : StringSchema
 	local self = setmetatable(Base.new(), String) :: any
@@ -30,7 +30,7 @@ function String.new() : StringSchema
 	return self
 end
 
-function String:_matchesRules(value : any) : boolean
+function String:_matchesRules(value : string) : boolean
 	if #value < self.minLength then
 		return false
 	end

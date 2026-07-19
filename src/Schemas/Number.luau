@@ -16,7 +16,7 @@ Number.__index = Number
 
 setmetatable(Number, Base)
 
-local KIND_SET = { number = true }
+const KIND_SET = { number = true }
 
 function Number.new() : NumberSchema
 	local self = setmetatable(Base.new(), Number) :: any
@@ -30,15 +30,10 @@ function Number.new() : NumberSchema
 	return self
 end
 
-function Number:_matchesRules(value : any)
-	if value < self.min then
+function Number:_matchesRules(value : number) : boolean
+	if value < self.min or value > self.max then
 		return false
 	end
-	
-	if value > self.max then
-		return false
-	end
-
 	return true
 end
 

@@ -2,6 +2,7 @@
 --!native
 --!optimize 2
 
+const globalConfig = require(script.Parent.globalConfig)
 const getValidDc = require(script.Parent.getValidDc)
 const typeOf = require(script.Parent.typeOf)
 
@@ -9,7 +10,7 @@ export type BaseSchema<Self, Coerced> = {
 	kindStr: string?,
 	kindSet: { [string]: true }?,
 	oneOfStr: string?,
-	oneOfSet: { [string]: true },
+	oneOfSet: { [any]: true },
 	optional: boolean,
 	default: any,
 	manualPolicy: boolean,
@@ -32,6 +33,8 @@ Base.__index = Base
 
 function Base.new<Self, Coerced>() : BaseSchema<Self, Coerced>
 	local self = setmetatable({}, Base) :: any
+
+	local config = globalConfig.getGlobalConfig()
 	
 	self.kindStr = nil
 	self.kindSet = nil
@@ -43,7 +46,7 @@ function Base.new<Self, Coerced>() : BaseSchema<Self, Coerced>
 	self.default = nil
 		
 	self.manualPolicy = false
-	self.policy = "Error"
+	self.policy = config.defaultPolicy
 	
 	self._schema = true
 
@@ -214,12 +217,13 @@ function Base:OneOf(values : { any })
 		return
 	end
 
+	-- Convert values to a lookup set for O(1) membership checks
 	local lookup = {}
-
 	for _, value in values do
 		lookup[value] = true
 	end
 
+	-- Cache a string representation of the allowed options for error formatting
 	local parts = {}
 	for _, v in values do
 		parts[#parts + 1] = tostring(v)

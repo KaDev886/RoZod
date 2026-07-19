@@ -216,4 +216,30 @@ function toType.Array(value : any) : {any}?
 	return nil
 end
 
+function toType.Color3(value : any) : Color3?
+    local to = typeof(value)
+
+    if to == "Color3" then
+        return value
+    end
+
+    if to == "string" then
+        local rgb = {}
+        local count = 0
+
+        for s in string.gmatch(value, "([^,]+)") do
+            count += 1
+            rgb[count] = tonumber(s)
+        end
+
+		if #rgb == 0 then
+			return nil
+		end
+
+        return Color3.new(rgb[1] or 0, rgb[2] or 0, rgb[3] or 0)
+    end
+
+    return nil
+end
+
 return toType

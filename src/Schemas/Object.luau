@@ -17,7 +17,7 @@ Object.__index = Object
 
 setmetatable(Object, Base)
 
-local KIND_SET = { table = true }
+const KIND_SET = { table = true }
 
 function Object.new(shape : {[any] : any}) : ObjectSchema
 	local self = setmetatable(Base.new(), Object) :: any
@@ -60,7 +60,7 @@ function Object.new(shape : {[any] : any}) : ObjectSchema
 	return self
 end
 
-function Object:_matchesRules(value : any) : boolean
+function Object:_matchesRules(value : ({} | {[any] : any})) : boolean
 	const shape = self.shape
 	const shapeKeys = self.shapeKeys
 

@@ -19,7 +19,7 @@ Array.__index = Array
 
 setmetatable(Array, Base)
 
-local KIND_SET = { table = true }
+const KIND_SET = { table = true }
 
 function Array.new(arrayType : Any.AnySchema?) : ArraySchema
 	local self = setmetatable(Base.new(), Array) :: any
@@ -29,13 +29,13 @@ function Array.new(arrayType : Any.AnySchema?) : ArraySchema
 
 	self.arrayType = if typeOf(arrayType) == "Schema" then arrayType else Any()
 
-	self.minLength = nil
-	self.maxLength = nil
+	self.minLength = 0
+	self.maxLength = math.huge
 	
 	return self
 end
 
-function Array:_matchesRules(value : any) : boolean
+function Array:_matchesRules(value : ({} | { any })) : boolean
 	local i = 0
 	
 	for k, val in value do
@@ -48,11 +48,11 @@ function Array:_matchesRules(value : any) : boolean
 		end
 	end
 
-	if self.minLength and #value < self.minLength then
+	if #value < self.minLength then
 		return false
 	end
 	
-	if self.maxLength and #value > self.maxLength then
+	if #value > self.maxLength then
 		return false
 	end
 
@@ -104,7 +104,7 @@ function Array:_validate(value, dc, path, policy)
 		return
 	end
 
-	if self.minLength and #value < self.minLength then
+	if #value < self.minLength then
 		newDc:Add(
 			policy, 
 			`Array is too small. Expected at least {self.minLength} elements, got {#value}`, 
@@ -118,7 +118,7 @@ function Array:_validate(value, dc, path, policy)
 		return
 	end
 	
-	if self.maxLength and #value > self.maxLength then
+	if #value > self.maxLength then
 		newDc:Add(
 			policy, 
 			`Array is too large. Expected at most {self.maxLength} elements, got {#value}`, 
@@ -144,7 +144,7 @@ function Array:MinLength(minLength : number) : ArraySchema
 		newDc:Throw()
 	end
 
-	if self.maxLength and minLength > self.maxLength then
+	if minLength > self.maxLength then
 		newDc:Add(
 			"Error", 
 			`minLength cannot be greater than maxLength. Expected at most {self.maxLength}, got {minLength}`
@@ -171,7 +171,7 @@ function Array:MaxLength(maxLength : number) : ArraySchema
 		newDc:Throw()
 	end
 
-	if self.minLength and maxLength < self.minLength then
+	if maxLength < self.minLength then
 		newDc:Add(
 			"Error", 
 			`maxLength cannot be less than minLength. Expected at least {self.minLength}, got {maxLength}`
@@ -207,23 +207,20 @@ function Array:Coerce(value : any) : ({} | { any })?
 			local coerced = self.arrayType:Coerce(val)
 				
 			if coerced == nil then
-				result = nil
-				break
+				return self.default
 			end
 				
 			result[key] = coerced
 		end
-	end
-	
-	if result == nil then
+	else
 		return self.default
 	end
-
-	if self.minLength and #result < self.minLength then
+	
+	if #result < self.minLength then
 		return nil
 	end
 
-	if self.maxLength and #result > self.maxLength then
+	if #result > self.maxLength then
 		return nil
 	end
 

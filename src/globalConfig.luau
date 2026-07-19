@@ -1,7 +1,13 @@
 local globalConfig = {}
 
 local defaultConfig = {
-    debugName = "RoZod"
+    debugName = "RoZod",
+    defaultPolicy = "Error"
+}
+
+type globalConfig = {
+    debugName: string,
+    defaultPolicy: string
 }
 
 local currentConfig = defaultConfig
@@ -26,7 +32,7 @@ local function coerce(before : {}, new : {})
     return cleanConfig
 end
 
-function globalConfig.setGlobalConfig(newConfig : {})
+function globalConfig.setGlobalConfig(newConfig : globalConfig)
     if typeof(newConfig) ~= "table" then return end
 
     currentConfig = coerce(defaultConfig, newConfig)

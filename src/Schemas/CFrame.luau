@@ -12,7 +12,7 @@ CFrameM.__index = CFrameM
 
 setmetatable(CFrameM, Base)
 
-local KIND_SET = { CFrame = true }
+const KIND_SET = { CFrame = true }
 
 function CFrameM.new() : CFrameSchema
 	local self = setmetatable(Base.new(), CFrameM) :: any

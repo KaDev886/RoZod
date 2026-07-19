@@ -12,7 +12,7 @@ Vector3M.__index = Vector3M
 
 setmetatable(Vector3M, Base)
 
-local KIND_SET = { Vector3 = true }
+const KIND_SET = { Vector3 = true }
 
 function Vector3M.new() : Vector3Schema
 	local self = setmetatable(Base.new(), Vector3M) :: any
@@ -25,7 +25,7 @@ end
 
 function Vector3M:Coerce(value : any) : Vector3?
 	local result = Base.Coerce(self, value)
-
+	
 	if result == nil then
 		return nil
 	end

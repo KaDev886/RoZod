@@ -1,7 +1,16 @@
+--!strict
 --!native
 --!optimize 2
 
 local Utils = {}
+
+function Utils.count(t : {any}) : number
+	local c = 0
+	for _ in t do
+		c += 1
+	end
+	return c
+end
 
 function Utils.isArray(t)
 	if typeof(t) ~= "table" then

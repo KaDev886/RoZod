@@ -12,7 +12,7 @@ EnumM.__index = EnumM
 
 setmetatable(EnumM, Base)
 
-local KIND_SET = { Enum = true, EnumItem = true }
+const KIND_SET = { Enum = true, EnumItem = true }
 
 function EnumM.new() : EnumSchema
 	local self = setmetatable(Base.new(), EnumM) :: any
