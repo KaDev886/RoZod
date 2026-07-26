@@ -8,14 +8,14 @@ These tests were performed in the Roblox Studio Server environment using `os.clo
 
 | Function | Data Type | Avg Ops/sec | Avg Latency |
 | :--- | :--- | :--- | :--- |
-| **IsValid** | Good Data | 4,417,886 | 0.00023 ms |
-| **IsValid** | Totally Broken Data | 6,816,726 | 0.00015 ms |
-| **Coerce** | Good Data | 6,478,891 | 0.00015 ms |
-| **Coerce** | Totally Broken Data | 3,322,791 | 0.00030 ms |
-| **Validate (Silent)** | Good Data | 10,450,194 | 0.00010 ms |
-| **Validate (Silent)** | Totally Broken Data | 10,473,178 | 0.00010 ms |
-| **Validate (Warn)** | Good Data | 435,635 | 0.00230 ms |
-| **Validate (Warn)** | Totally Broken Data | 8,464 | 0.11814 ms |
+| **IsValid** | Good Data | 13,513,293 | 0.00007 ms |
+| **IsValid** | Totally Broken Data | 20,394,732 | 0.00005 ms |
+| **Coerce** | Good Data | 18,936,140 | 0.00005 ms |
+| **Coerce** | Totally Broken Data | 8,336,475 | 0.00012 ms |
+| **Validate (Silent)** | Good Data | 26,197,844 | 0.00004 ms |
+| **Validate (Silent)** | Totally Broken Data | 23,458,089 | 0.00004 ms |
+| **Validate (Warn)** | Good Data | 534,026 | 0.00187 ms |
+| **Validate (Warn)** | Totally Broken Data | 71,801 | 0.01393 ms |
 
 ---
 
@@ -45,35 +45,35 @@ local testSchema = RoZod.Object({
 
 | Function | Scenario | Avg Ops/sec | Avg Latency |
 | :--- | :--- | :--- | :--- |
-| **IsValid** | Good Data | 256,664 | 0.00390 ms |
-| **IsValid** | Partially Broken Data | 202,974 | 0.00493 ms |
-| **IsValid** | Totally Broken Data | 2,128,719 | 0.00047 ms |
-| **Coerce** | Good Data | 241,357 | 0.00414 ms |
-| **Coerce** | Partially Broken Data | 84,185 | 0.01188 ms |
-| **Coerce** | Totally Broken Data | 108,742 | 0.00920 ms |
-| **Validate (Silent)** | Good Data | 10,929,320 | 0.00009 ms |
-| **Validate (Silent)** | Partially Broken Data | 10,996,503 | 0.00009 ms |
-| **Validate (Silent)** | Totally Broken Data | 10,677,623 | 0.00009 ms |
-| **Validate (Warn)** | Good Data | 88,225 | 0.01133 ms |
-| **Validate (Warn)** | Partially Broken Data | 7,307 | 0.13685 ms |
-| **Validate (Warn)** | Totally Broken Data | 8,263 | 0.12103 ms |
+| **IsValid** | Good Data | 910,836 | 0.00110 ms |
+| **IsValid** | Partially Broken Data | 675,039 | 0.00148 ms |
+| **IsValid** | Totally Broken Data | 3,250,924 | 0.00031 ms |
+| **Coerce** | Good Data | 787,532 | 0.00127 ms |
+| **Coerce** | Partially Broken Data | 259,807 | 0.00385 ms |
+| **Coerce** | Totally Broken Data | 338,438 | 0.00295 ms |
+| **Validate (Silent)** | Good Data | 20,668,198 | 0.00005 ms |
+| **Validate (Silent)** | Partially Broken Data | 20,800,149 | 0.00005 ms |
+| **Validate (Silent)** | Totally Broken Data | 20,975,004 | 0.00005 ms |
+| **Validate (Warn)** | Good Data | 146,180 | 0.00684 ms |
+| **Validate (Warn)** | Partially Broken Data | 46,585 | 0.02147 ms |
+| **Validate (Warn)** | Totally Broken Data | 61,083 | 0.01637 ms |
 
 ### With OneOf
 
 | Function | Scenario | Avg Ops/sec | Avg Latency |
 | :--- | :--- | :--- | :--- |
-| **IsValid** | Good Data | 268,861 | 0.00372 ms |
-| **IsValid** | Partially Broken Data | 341,361 | 0.00293 ms |
-| **IsValid** | Totally Broken Data | 2,109,308 | 0.00047 ms |
-| **Coerce** | Good Data | 246,669 | 0.00405 ms |
-| **Coerce** | Partially Broken Data | 87,492 | 0.01143 ms |
-| **Coerce** | Totally Broken Data | 137,656 | 0.00726 ms |
-| **Validate (Silent)** | Good Data | 9,756,859 | 0.00010 ms |
-| **Validate (Silent)** | Partially Broken Data | 10,264,306 | 0.00010 ms |
-| **Validate (Silent)** | Totally Broken Data | 10,246,007 | 0.00010 ms |
-| **Validate (Warn)** | Good Data | 86,327 | 0.01158 ms |
-| **Validate (Warn)** | Partially Broken Data | 5,834 | 0.17141 ms |
-| **Validate (Warn)** | Totally Broken Data | 8,003 | 0.12495 ms |
+| **IsValid** | Good Data | 887,283 | 0.00113 ms |
+| **IsValid** | Partially Broken Data | 986,143 | 0.00101 ms |
+| **IsValid** | Totally Broken Data | 6,592,839 | 0.00015 ms |
+| **Coerce** | Good Data | 773,811 | 0.00129 ms |
+| **Coerce** | Partially Broken Data | 241,999 | 0.00413 ms |
+| **Coerce** | Totally Broken Data | 391,960 | 0.00255 ms |
+| **Validate (Silent)** | Good Data | 21,820,211 | 0.00005 ms |
+| **Validate (Silent)** | Partially Broken Data | 21,500,253 | 0.00005 ms |
+| **Validate (Silent)** | Totally Broken Data | 20,632,854 | 0.00005 ms |
+| **Validate (Warn)** | Good Data | 125,840 | 0.00795 ms |
+| **Validate (Warn)** | Partially Broken Data | 35,644 | 0.02805 ms |
+| **Validate (Warn)** | Totally Broken Data | 56,742 | 0.01762 ms |
 
 * **Good Data:** Matches the schema perfectly.
 * **Partially Broken Data:** Includes extra keys that RoZod filters out and some type mismatches.
