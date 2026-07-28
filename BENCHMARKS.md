@@ -1,6 +1,6 @@
 # RoZod Benchmarks
 
-These tests were performed in the Roblox Studio Server environment using `os.clock()`. Performance is measured in **Operations per second (Ops/sec)** and **Latency (ms)**.
+These tests were performed in the Roblox Live Server environment using `os.clock()`. Performance is measured in **Operations per second (Ops/sec)** and **Latency (ms)**.
 
 ---
 
